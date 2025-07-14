@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>데이터 품질 관리 시스템 (통합 문서)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        /* Global Styles */
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #0a192f; color: #ffffff; margin: 0; padding: 0; }
+        .slide-container { width: 1280px; margin: 0 auto; padding: 40px 0; }
+        .slide-separator { height: 2px; background: linear-gradient(to right, transparent, #007bff, transparent); margin: 60px 0; opacity: 0.5; }
+        .slide { width: 1280px; min-height: 720px; position: relative; overflow: hidden; margin-bottom: 20px; }
+        .bg-pattern { position: absolute; width: 100%; height: 100%; background-color: #0a192f; background-image: radial-gradient(circle at 15% 50%, rgba(1, 65, 255, 0.2) 0%, transparent 25%), radial-gradient(circle at 85% 30%, rgba(0, 123, 255, 0.15) 0%, transparent 30%); z-index: 0; }
+        .grid-lines { position: absolute; width: 100%; height: 100%; background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px); background-size: 30px 30px; z-index: 1; }
+        .content { position: relative; z-index: 10; height: 100%; display: flex; flex-direction: column; padding: 50px 60px; }
+        .accent-bar { position: absolute; top: 0; left: 0; width: 10px; height: 100%; background-color: #007bff; }
+        .page-number { position: absolute; bottom: 20px; right: 20px; font-size: 14px; color: rgba(255, 255, 255, 0.5); }
+        .data-dots { position: absolute; width: 100%; height: 100%; z-index: 2; }
+        .data-dot { position: absolute; width: 4px; height: 4px; background-color: rgba(255, 255, 255, 0.3); border-radius: 50%; }
+        .quote-box { position: relative; border-left: 4px solid #007bff; padding: 10px 20px; background-color: rgba(0, 123, 255, 0.1); border-radius: 0 4px 4px 0; }
+        .quote-box::before { content: '"'; font-size: 48px; color: #007bff; position: absolute; top: -15px; left: 10px; opacity: 0.5; }
+        .card { background-color: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 20px; transition: all 0.3s ease; }
+        .card:hover { background-color: rgba(255, 255, 255, 0.1); transform: translateY(-5px); }
+        .component-box, .feature-card { background-color: rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 20px; border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease; }
+        .component-box:hover, .feature-card:hover { background-color: rgba(255, 255, 255, 0.1); transform: translateY(-3px); }
+        .icon-circle { display: flex; align-items: center; justify-content: center; width: 70px; height: 70px; border-radius: 50%; margin-right: 20px; background-color: rgba(0, 123, 255, 0.2); color: #007bff; }
+        .verification-card { background-color: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 16px; border-left: 4px solid transparent; transition: all 0.3s ease; }
+        .verification-card:hover { background-color: rgba(255, 255, 255, 0.1); transform: translateY(-2px); }
+        .terminal { background-color: #1e1e1e; border-radius: 8px; padding: 20px; font-family: 'Courier New', monospace; color: #f8f8f8; border: 1px solid rgba(255, 255, 255, 0.2); }
+        .code-block { background-color: rgba(0, 0, 0, 0.3); border-radius: 8px; font-family: 'Consolas', 'Monaco', monospace; padding: 16px; position: relative; }
+        .thank-you-section { background: linear-gradient(90deg, rgba(0,123,255,0.2) 0%, rgba(0,123,255,0) 100%); border-left: 4px solid #007bff; padding: 16px 24px; border-radius: 0 8px 8px 0; }
+        .report-card { background-color: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 20px; }
+        .report-table { width: 100%; border-collapse: collapse; }
+        .report-table th, .report-table td { padding: 10px; text-align: left; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .report-table th { color: #9ca3af; }
+        .report-table .rate-up { color: #f87171; }
+        .report-table .rate-down { color: #f87171; }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div id="slide-1" class="slide bg-slate-900">
+            <div class="bg-pattern"></div><div class="grid-lines"></div><div class="data-dots" id="dataDots"></div><div class="accent-bar"></div>
+            <div class="content text-white">
+                <div class="header">
+                    <div class="flex items-center mb-4"><div class="mr-5 text-5xl text-blue-400"><i class="fas fa-database"></i><i class="fas fa-check-circle ml-1 text-4xl text-green-400"></i></div></div>
+                    <h1 class="text-5xl font-bold mb-6 text-white">자동화된 데이터 품질 관리 시스템</h1>
+                    <h2 class="text-3xl font-medium mb-3 text-blue-300">DQM 라이브러리 및 실행기</h2>
+                    <p class="text-xl text-gray-300 mt-6">bmalsa0026 테이블 검증 사례를 중심으로</p>
+                </div>
+                <div class="footer flex justify-between items-end">
+                    <div><p class="text-lg text-gray-400"><span class="mr-2">작성자: </span> <span class="text-white">최진현</span></p><p class="text-lg text-gray-400"><span class="mr-2">소속:</span> <span class="text-white">Data Biz</span></p></div>
+                    <div class="text-right"><div class="flex items-center justify-end mb-2"><i class="fas fa-calendar-alt mr-2 text-blue-400"></i><p class="text-lg">2025년 7월 9일</p></div><div class="flex items-center justify-end"><i class="fas fa-chart-line mr-2 text-green-400"></i><p class="text-sm text-gray-300">데이터 품질 향상을 위한 자동화 솔루션</p></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide-separator"></div>
+
+        <h1 class="text-5xl font-bold text-center mb-10 text-blue-300">데이터 품질 관리 시스템 통합 문서</h1>
+
+        <div class="slide bg-slate-900">
+            <div class="bg-pattern"></div><div class="grid-lines"></div><div class="accent-bar"></div>
+            <div class="content text-white">
+                <div class="mb-8"><h1 class="text-4xl font-bold flex items-center"><span class="text-4xl mr-3">📚</span>목차</h1></div>
+                <div class="grid grid-cols-2 gap-x-8 gap-y-6 text-xl">
+                    <a href="#slide-1" class="p-4 rounded-lg hover:bg-blue-900/50 transition-all">1. 시스템 소개</a>
+                    <a href="#slide-2" class="p-4 rounded-lg hover:bg-blue-900/50 transition-all">2. 자동화된 데이터 검증의 필요성</a>
+                    <a href="#slide-3" class="p-4 rounded-lg hover:bg-blue-900/50 transition-all">3. 시스템 구성도</a>
+                    <a href="#slide-4" class="p-4 rounded-lg hover:bg-blue-900/50 transition-all">4. 핵심 엔진: dqmlib 라이브러리</a>
+                    <a href="#slide-5" class="p-4 rounded-lg hover:bg-blue-900/50 transition-all">5. 주요 검증 기능 (기본/통계)</a>
+                    <a href="#slide-6" class="p-4 rounded-lg hover:bg-blue-900/50 transition-all">6. 주요 검증 기능 (테이블 레벨)</a>
+                    <a href="#slide-7" class="p-4 rounded-lg hover:bg-blue-900/50 transition-all">7. 사용법: 스크립트 실행하기</a>
+                    <a href="#slide-8" class="p-4 rounded-lg hover:bg-blue-900/50 transition-all">8. 사용법: 검증 규칙 설정하기</a>
+                    <a href="#slide-9" class="p-4 rounded-lg hover:bg-blue-900/50 transition-all">9. 심층 분석: 매출 급변동 감지 예시</a>
+                    <a href="#slide-10" class="p-4 rounded-lg hover:bg-blue-900/50 transition-all font-bold text-yellow-300">10. AI 기반 검증 결과 분석 보고서 (샘플)</a>
+                    <a href="#slide-11" class="p-4 rounded-lg hover:bg-blue-900/50 transition-all">11. 기대 효과 및 향후 방향</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide-separator"></div>
+
+        <div id="slide-2" class="slide bg-slate-900">
+            <div class="bg-pattern"></div><div class="grid-lines"></div><div class="accent-bar"></div>
+            <div class="content text-white">
+                <div class="mb-8"><h1 class="text-4xl font-bold flex items-center"><span class="text-4xl mr-3">🧐</span>데이터, 문제는 없나요? - <span class="text-blue-400 ml-2">자동화된 데이터 검증의 필요성</span></h1></div>
+                <div class="quote-box mb-8"><p class="text-2xl text-gray-200 italic">"데이터는 거짓말은 하지 않습니다. 문제가 있을 뿐이죠."</p></div>
+                <div class="grid grid-cols-3 gap-8 mt-4">
+                    <div class="card"><div class="flex items-center mb-4"><div class="icon-circle mr-4"><i class="fas fa-exclamation-triangle text-2xl"></i></div><h3 class="text-xl font-bold text-blue-300">문제점</h3></div><ul class="ml-4 space-y-3"><li class="flex items-start"><i class="fas fa-circle text-xs mt-1.5 mr-2 text-blue-400"></i><p>매일 입수되는 대용량 데이터(bmalsa0026)의 정합성 확인 어려움</p></li><li class="flex items-start"><i class="fas fa-circle text-xs mt-1.5 mr-2 text-blue-400"></i><p>데이터 누락 및 이상치 수동 검증의 한계</p></li><li class="flex items-start"><i class="fas fa-circle text-xs mt-1.5 mr-2 text-blue-400"></i><p>실시간 데이터 품질 모니터링 부재</p></li></ul></div>
+                    <div class="card"><div class="flex items-center mb-4"><div class="icon-circle mr-4"><i class="fas fa-lightbulb text-2xl"></i></div><h3 class="text-xl font-bold text-blue-300">해결책</h3></div><ul class="ml-4 space-y-3"><li class="flex items-start"><i class="fas fa-circle text-xs mt-1.5 mr-2 text-blue-400"></i><p>데이터 품질 검증 규칙(Rule)을 코드로 정의</p></li><li class="flex items-start"><i class="fas fa-circle text-xs mt-1.5 mr-2 text-blue-400"></i><p>검증 프로세스 자동화 구현</p></li><li class="flex items-start"><i class="fas fa-circle text-xs mt-1.5 mr-2 text-blue-400"></i><p>문제 발생 시 조기 경보 시스템 구축</p></li></ul></div>
+                    <div class="card"><div class="flex items-center mb-4"><div class="icon-circle mr-4"><i class="fas fa-chart-line text-2xl"></i></div><h3 class="text-xl font-bold text-blue-300">기대효과</h3></div><ul class="ml-4 space-y-3"><li class="flex items-start"><i class="fas fa-circle text-xs mt-1.5 mr-2 text-blue-400"></i><p>데이터 신뢰도 향상</p></li><li class="flex items-start"><i class="fas fa-circle text-xs mt-1.5 mr-2 text-blue-400"></i><p>운영 효율성 증대</p></li><li class="flex items-start"><i class="fas fa-circle text-xs mt-1.5 mr-2 text-blue-400"></i><p>잠재적인 장애 예방</p></li></ul></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide-separator"></div>
+
+        <div id="slide-3" class="slide bg-slate-900">
+            <div class="bg-pattern"></div><div class="grid-lines"></div><div class="accent-bar"></div>
+            <div class="content text-white">
+                 <div class="mb-6"><h1 class="text-4xl font-bold flex items-center"><span class="text-4xl mr-3">🏗️</span>시스템 구성도: <span class="text-blue-400 ml-2">데이터 검증의 3가지 핵심 요소</span></h1></div>
+                <div class="flex justify-center mt-4 mb-8"><div class="flex flex-col items-center"><div class="flex items-center justify-between w-full max-w-4xl"><div class="component-box w-64 text-center"><div class="flex flex-col items-center"><div class="text-4xl text-yellow-400 mb-2"><i class="fas fa-code"></i></div><h3 class="text-xl font-bold text-yellow-300 mb-1">실행기</h3><p class="text-sm text-gray-300">Validator Script</p></div></div><div class="w-32 relative"><div class="flow-arrow"></div><div class="text-xs text-blue-300 text-center mt-2">호출</div></div><div class="component-box w-64 text-center"><div class="flex flex-col items-center"><div class="text-4xl text-blue-400 mb-2"><i class="fas fa-cogs"></i></div><h3 class="text-xl font-bold text-blue-300 mb-1">핵심 엔진</h3><p class="text-sm text-gray-300">dqmlib.py</p></div></div></div><div class="flex justify-between w-full max-w-4xl mt-4"><div class="w-64 flex flex-col items-center"><div class="h-16 relative"><div class="flow-arrow-down"></div></div><div class="text-xs text-blue-300 -mt-4 mb-2">데이터 조회</div></div><div class="w-32"></div><div class="w-64 flex flex-col items-center"><div class="h-16 relative"><div class="flow-arrow-down"></div></div><div class="text-xs text-blue-300 -mt-4 mb-2">결과 저장</div></div></div><div class="component-box w-full max-w-4xl text-center mt-4"><div class="flex flex-col items-center"><div class="text-4xl text-green-400 mb-2"><i class="fas fa-database"></i></div><h3 class="text-xl font-bold text-green-300 mb-1">데이터베이스</h3><p class="text-sm text-gray-300">Hive</p></div></div></div></div>
+                <div class="grid grid-cols-3 gap-8 mt-6">
+                    <div class="component-box"><div class="flex"><div class="icon-circle"><i class="fas fa-code text-3xl"></i></div><div><h3 class="text-xl font-bold text-yellow-300 mb-2">[실행기] Validator Script</h3><p class="text-gray-300 text-sm">The Runner</p></div></div><ul class="mt-4 space-y-2 text-sm"><li class="flex items-start"><i class="fas fa-angle-right text-yellow-400 mt-1 mr-2"></i><p><span class="text-yellow-300">bmalsa0026</span> 테이블을 실제로 검증하기 위한 실행 스크립트</p></li><li class="flex items-start"><i class="fas fa-angle-right text-yellow-400 mt-1 mr-2"></i><p>검증에 필요한 규칙(<span class="text-yellow-300">rules_config</span>)을 정의</p></li><li class="flex items-start"><i class="fas fa-angle-right text-yellow-400 mt-1 mr-2"></i><p><span class="text-blue-300">dqmlib</span> 라이브러리를 호출하여 검증 프로세스를 구동</p></li></ul></div>
+                    <div class="component-box"><div class="flex"><div class="icon-circle"><i class="fas fa-cogs text-3xl"></i></div><div><h3 class="text-xl font-bold text-blue-300 mb-2">[라이브러리] dqmlib.py</h3><p class="text-gray-300 text-sm">Core Engine</p></div></div><ul class="mt-4 space-y-2 text-sm"><li class="flex items-start"><i class="fas fa-angle-right text-blue-400 mt-1 mr-2"></i><p>재사용 가능한 데이터 검증 기능들을 모아놓은 핵심 엔진</p></li><li class="flex items-start"><i class="fas fa-angle-right text-blue-400 mt-1 mr-2"></i><p>다양한 품질 검사 규칙들이 함수 형태로 구현된 '도구 상자' 역할</p></li><li class="flex items-start"><i class="fas fa-angle-right text-blue-400 mt-1 mr-2"></i><p>모든 검증 로직을 표준화된 방식으로 제공</p></li></ul></div>
+                    <div class="component-box"><div class="flex"><div class="icon-circle"><i class="fas fa-database text-3xl"></i></div><div><h3 class="text-xl font-bold text-green-300 mb-2">[데이터 소스/결과 저장소]</h3><p class="text-gray-300 text-sm">Database (Hive)</p></div></div><ul class="mt-4 space-y-2 text-sm"><li class="flex items-start"><i class="fas fa-angle-right text-green-400 mt-1 mr-2"></i><p>검증 대상이 되는 원본 데이터(<span class="text-green-300">bmalsa0026</span>) 저장</p></li><li class="flex items-start"><i class="fas fa-angle-right text-green-400 mt-1 mr-2"></i><p>검증 수행 후 발생하는 모든 결과(오류 내역, 요약 리포트) 적재</p></li><li class="flex items-start"><i class="fas fa-angle-right text-green-400 mt-1 mr-2"></i><p>과거 데이터와의 비교를 위한 데이터 조회 기능 제공</p></li></ul></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide-separator"></div>
+
+        <div id="slide-4" class="slide bg-slate-900">
+             <div class="bg-pattern"></div><div class="grid-lines"></div><div class="accent-bar"></div>
+            <div class="content text-white">
+                <div class="mb-6"><h1 class="text-4xl font-bold flex items-center"><span class="text-4xl mr-3">🔧</span>데이터 검증 라이브러리 소개: <span class="text-blue-400 ml-2">dqmlib 라이브러리</span></h1></div>
+                <div class="mb-6"><p class="text-lg text-gray-300"><span class="text-blue-400 font-bold">dqmlib</span>는 데이터 검증의 핵심 로직을 담당하는 파이썬 라이브러리입니다. 데이터 검증 로직을 '부품'처럼 만들어, 여러 데이터 검증 시나리오에도 유연하게 '조립'하여 사용할 수 있도록 설계되었습니다.</p></div>
+                <div class="flex justify-center mb-8"><div class="flex flex-wrap justify-center items-center w-4/5"><div class="module-box w-1/6"><i class="fas fa-ban text-red-400 text-xl mb-2"></i><div class="text-sm">not_null</div></div><div class="module-box w-1/6"><i class="fas fa-code text-yellow-400 text-xl mb-2"></i><div class="text-sm">regex_pattern</div></div><div class="module-box w-1/6"><i class="fas fa-list text-green-400 text-xl mb-2"></i><div class="text-sm">allowed_values</div></div><div class="module-box w-1/6"><i class="fas fa-chart-line text-purple-400 text-xl mb-2"></i><div class="text-sm">numeric_range</div></div><div class="module-box w-1/6"><i class="fas fa-chart-pie text-blue-400 text-xl mb-2"></i><div class="text-sm">distribution_change</div></div></div></div>
+                <div class="grid grid-cols-2 gap-6 mt-4">
+                    <div class="feature-card"><div class="flex items-center mb-3"><div class="icon-circle mr-4"><i class="fas fa-list-check text-xl"></i></div><h3 class="text-xl font-bold text-blue-300">규칙 기반(Rule-Based)</h3></div><p class="text-gray-300">필요한 검증 규칙을 선택하고 각 규칙에 맞는 파라미터만 설정하면 즉시 동작합니다. 복잡한 코딩 없이 선언적으로 검증 로직을 구성할 수 있습니다.</p></div>
+                    <div class="feature-card"><div class="flex items-center mb-3"><div class="icon-circle mr-4"><i class="fas fa-puzzle-piece text-xl"></i></div><h3 class="text-xl font-bold text-blue-300">확장성(Extensibility)</h3></div><p class="text-gray-300">기존에 없는 새로운 유형의 검증이 필요할 경우, 표준화된 인터페이스에 맞춰 새로운 검증 함수를 손쉽게 추가하고 시스템에 통합할 수 있습니다.</p></div>
+                    <div class="feature-card"><div class="flex items-center mb-3"><div class="icon-circle mr-4"><i class="fas fa-database text-xl"></i></div><h3 class="text-xl font-bold text-blue-300">DB 연동(DB Integration)</h3></div><p class="text-gray-300">내장된 <code class="bg-gray-700 px-1 rounded">QueryProcessor</code>를 통해 DB의 과거 데이터를 직접 조회하여 추세, 변동성 등 복합적인 검증을 지원합니다.</p></div>
+                    <div class="feature-card"><div class="flex items-center mb-3"><div class="icon-circle mr-4"><i class="fas fa-file-alt text-xl"></i></div><h3 class="text-xl font-bold text-blue-300">자동 리포팅</h3></div><p class="text-gray-300">검증 실행 결과와 상세 오류 내역을 체계적으로 생성하여 DB 테이블에 자동으로 적재하고, 필요 시 파일로 저장할 수 있습니다.</p></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide-separator"></div>
+
+        <div id="slide-5" class="slide bg-slate-900">
+            <div class="bg-pattern"></div><div class="grid-lines"></div><div class="accent-bar"></div>
+            <div class="content text-white">
+                 <div class="mb-6"><h1 class="text-4xl font-bold flex items-center"><span class="text-4xl mr-3">✨</span>주요 검증 기능: <span class="text-blue-400 ml-2">기본 및 통계 검증</span></h1><p class="text-gray-400 mt-2">컬럼 단위의 기본적인 데이터 유효성 검사부터 통계적 기법을 활용한 분포 변화 감지까지</p></div>
+                <div class="mb-6"><h2 class="text-2xl font-bold text-green-400 mb-4 flex items-center"><i class="fas fa-check-circle mr-2"></i> 기본 검증 (Basic Verification)</h2><div class="grid grid-cols-2 gap-4">
+                    <div class="verification-card basic-card"><div class="flex"><div class="icon-box basic-icon mr-4"><i class="fas fa-ban"></i></div><div class="flex-1"><h3 class="text-xl font-semibold text-green-300">not_null</h3><p class="text-gray-300 mb-2">값이 비어있는지(NULL) 확인합니다.</p></div></div></div>
+                    <div class="verification-card basic-card"><div class="flex"><div class="icon-box basic-icon mr-4"><i class="fas fa-spell-check"></i></div><div class="flex-1"><h3 class="text-xl font-semibold text-green-300">regex_pattern</h3><p class="text-gray-300 mb-2">값이 특정 형식(예: YYYYMMDD)에 맞는지 확인합니다.</p></div></div></div>
+                    <div class="verification-card basic-card"><div class="flex"><div class="icon-box basic-icon mr-4"><i class="fas fa-list-ul"></i></div><div class="flex-1"><h3 class="text-xl font-semibold text-green-300">allowed_values</h3><p class="text-gray-300 mb-2">값이 정해진 목록(예: '내국인', '외국인') 안에 있는지 확인합니다.</p></div></div></div>
+                    <div class="verification-card basic-card"><div class="flex"><div class="icon-box basic-icon mr-4"><i class="fas fa-arrows-alt-h"></i></div><div class="flex-1"><h3 class="text-xl font-semibold text-green-300">numeric_range</h3><p class="text-gray-300 mb-2">숫자가 특정 범위(예: 0 이상)에 있는지 확인합니다.</p></div></div></div>
+                </div></div>
+                <div><h2 class="text-2xl font-bold text-orange-400 mb-4 flex items-center"><i class="fas fa-chart-pie mr-2"></i> 통계/분포 검증 (Statistical Verification)</h2><div class="grid grid-cols-2 gap-4">
+                    <div class="verification-card stat-card"><div class="flex"><div class="icon-box stat-icon mr-4"><i class="fas fa-not-equal"></i></div><div class="flex-1"><h3 class="text-xl font-semibold text-orange-300">distribution_change</h3><p class="text-gray-300 mb-2">과거 데이터 대비 코드 값의 분포(빈도)가 크게 변하지 않았는지 확인합니다.</p></div></div></div>
+                    <div class="verification-card stat-card"><div class="flex"><div class="icon-box stat-icon mr-4"><i class="fas fa-wave-square"></i></div><div class="flex-1"><h3 class="text-xl font-semibold text-orange-300">numeric_volatility</h3><p class="text-gray-300 mb-2">그룹별(예: 도시/업종별) 매출액이 과거 통계(평균, 표준편차) 대비 너무 튀지 않는지 확인합니다.</p></div></div></div>
+                </div></div>
+            </div>
+        </div>
+
+        <div class="slide-separator"></div>
+
+        <div id="slide-6" class="slide bg-slate-900">
+             <div class="bg-pattern"></div><div class="grid-lines"></div><div class="accent-bar"></div>
+             <div class="content text-white">
+                 <div class="mb-6"><h1 class="text-4xl font-bold flex items-center"><span class="text-4xl mr-3">📈</span>주요 검증 기능: <span class="text-blue-400 ml-2">테이블 레벨 검증</span></h1><p class="text-gray-300 mt-2">전체 테이블 관점에서 추세, 구조, 관계를 검증하는 고도화된 기능들</p></div>
+                 <div class="grid grid-cols-3 gap-6 mt-4">
+                     <div class="flex flex-col space-y-4"><div class="bg-gradient-to-r from-green-900/30 to-transparent p-3 rounded-lg"><h2 class="text-xl font-bold text-green-400 flex items-center"><i class="fas fa-chart-line mr-2"></i>추세 분석</h2></div><div class="validation-card trend-card"><div class="flex items-center mb-3"><div class="icon-circle trend-icon mr-3"><i class="fas fa-chart-bar"></i></div><h3 class="text-lg font-semibold text-green-300">aggregate_value_trend</h3></div><p class="text-sm text-gray-300 mb-2">전체 또는 그룹별 집계값(예: 매출 합계)이 과거 N일 평균 대비 급증/급감했는지 추적합니다.</p></div><div class="validation-card trend-card"><div class="flex items-center mb-3"><div class="icon-circle trend-icon mr-3"><i class="fas fa-table"></i></div><h3 class="text-lg font-semibold text-green-300">total_row_count_trend</h3></div><p class="text-sm text-gray-300 mb-2">테이블의 전체 데이터 건수가 과거 대비 급격하게 변동했는지 감지합니다.</p></div><div class="validation-card trend-card"><div class="flex items-center mb-3"><div class="icon-circle trend-icon mr-3"><i class="fas fa-arrow-trend-down"></i></div><h3 class="text-lg font-semibold text-green-300">consecutive_trend_check</h3></div><p class="text-sm text-gray-300 mb-2">그룹별(예: 도시별) 특정 지표가 N일 연속으로 하락 또는 상승하는 이상 추세를 감지합니다.</p></div></div>
+                     <div class="flex flex-col space-y-4"><div class="bg-gradient-to-r from-blue-900/30 to-transparent p-3 rounded-lg"><h2 class="text-xl font-bold text-blue-400 flex items-center"><i class="fas fa-table-columns mr-2"></i>구조 검증</h2></div><div class="validation-card structure-card"><div class="flex items-center mb-3"><div class="icon-circle structure-icon mr-3"><i class="fas fa-code-branch"></i></div><h3 class="text-lg font-semibold text-blue-300">schema_change_check</h3></div><p class="text-sm text-gray-300 mb-2">테이블의 컬럼 구조(컬럼 추가, 삭제, 데이터 타입 변경)가 의도치 않게 바뀌었는지 자동으로 감지합니다.</p></div></div>
+                     <div class="flex flex-col space-y-4"><div class="bg-gradient-to-r from-purple-900/30 to-transparent p-3 rounded-lg"><h2 class="text-xl font-bold text-purple-400 flex items-center"><i class="fas fa-diagram-project mr-2"></i>관계 검증</h2></div><div class="validation-card relationship-card"><div class="flex items-center mb-3"><div class="icon-circle relationship-icon mr-3"><i class="fas fa-copy"></i></div><h3 class="text-lg font-semibold text-purple-300">duplicate_rows</h3></div><p class="text-sm text-gray-300 mb-2">기본 키(Primary Key) 또는 특정 컬럼 조합을 기준으로 중복된 데이터가 존재하는지 확인합니다.</p></div></div>
+                 </div>
+             </div>
+        </div>
+
+        <div class="slide-separator"></div>
+
+        <div id="slide-7" class="slide bg-slate-900">
+            <div class="bg-pattern"></div><div class="grid-lines"></div><div class="accent-bar"></div>
+            <div class="content text-white">
+                <div class="mb-6"><h1 class="text-4xl font-bold flex items-center"><span class="text-4xl mr-3">🚀</span>직접 실행해보기: <span class="text-blue-400 ml-2">How to Use</span></h1></div>
+                <div class="mb-6"><p class="text-lg text-gray-300">검증 스크립트는 터미널에서 간단한 명령어로 실행할 수 있습니다. 날짜를 지정하지 않으면 오늘 날짜로 자동 실행됩니다.</p></div>
+                <div class="flex space-x-6 mb-8"><div class="step-card flex-1"><div class="flex items-center mb-3"><div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center mr-3"><span class="font-bold">1</span></div><h3 class="text-xl font-bold text-blue-300">터미널 열기</h3></div><p class="text-gray-300 ml-11">명령 프롬프트 또는 터미널 애플리케이션을 실행합니다.</p></div><div class="step-card flex-1"><div class="flex items-center mb-3"><div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center mr-3"><span class="font-bold">2</span></div><h3 class="text-xl font-bold text-blue-300">명령어 입력</h3></div><p class="text-gray-300 ml-11">아래 명령어를 입력하여 스크립트를 실행합니다.</p></div></div>
+                <div class="terminal"><div class="terminal-header"><div class="terminal-circle bg-red-500"></div><div class="terminal-circle bg-yellow-500 ml-1"></div><div class="terminal-circle bg-green-500 ml-1"></div><div class="ml-4 text-gray-400 text-sm">Terminal - bmalsa0026_validator.py</div></div><div class="command-line"><span class="prompt">$</span><span class="command">python bmalsa0026_validator.py 20250515</span></div><div class="output text-sm">INFO: 인자로 받은 날짜 '20250515'를 기준으로 검증을 시작합니다.
+    ------------------------------
+    >>> 실제 DB 대상 검증 시작 ...
+    ... (검증 과정 로그) ...
+    >>> 검증 완료: 모든 검증을 통과했습니다.</div><div class="mt-4"><div class="command-line"><span class="prompt">$</span><span class="command"># 날짜를 지정하지 않으면 오늘 날짜로 자동 실행</span></div><div class="command-line"><span class="prompt">$</span><span class="command">python bmalsa0026_validator.py</span></div></div></div>
+            </div>
+        </div>
+
+        <div class="slide-separator"></div>
+
+        <div id="slide-8" class="slide bg-slate-900">
+            <div class="bg-pattern"></div><div class="grid-lines"></div><div class="accent-bar"></div>
+            <div class="content text-white">
+                <div class="mb-6"><h1 class="text-4xl font-bold flex items-center"><span class="text-4xl mr-3">⚙️</span>나만의 규칙 만들기: <span class="text-blue-400 ml-2">rules_config</span></h1><p class="text-gray-300 mt-2">검증의 모든 내용은 하나의 딕셔너리(Dictionary) 객체에 선언적으로 정의합니다</p></div>
+                <div class="grid grid-cols-12 gap-6">
+                    <div class="col-span-5"><h3 class="text-xl font-bold text-blue-300 mb-4 flex items-center"><i class="fas fa-sitemap mr-2"></i>rules_config 구조</h3><div class="structure-box"><div class="structure-item"><span class="text-blue-400 font-bold">rules_config</span> <span class="text-gray-400">(Dictionary)</span><div class="pl-6 mt-2"><div class="structure-item"><span class="text-green-400 font-bold">"columns"</span> <span class="text-gray-400">(Dictionary)</span><div class="pl-6 mt-2"><div class="structure-item"><span class="text-yellow-400">"컬럼명"</span> <span class="text-gray-400">(List)</span><div class="pl-6 mt-2"><div class="structure-item"><span class="text-gray-300">규칙 1: name, type, params</span></div><div class="structure-item"><span class="text-gray-300">규칙 2: name, type, params</span></div></div></div><div class="structure-item"><span class="text-yellow-400">"다른_컬럼명"</span><div class="pl-6"><span class="text-gray-300">...</span></div></div></div></div><div class="structure-item"><span class="text-green-400 font-bold">"table_level_rules"</span> <span class="text-gray-400">(List)</span><div class="pl-6 mt-2"><div class="structure-item"><span class="text-gray-300">테이블 규칙 1: name, type, params</span></div><div class="structure-item"><span class="text-gray-300">테이블 규칙 2: name, type, params</span></div></div></div></div></div></div><div class="mt-6"><h3 class="text-xl font-bold text-blue-300 mb-3 flex items-center"><i class="fas fa-lightbulb mr-2"></i>규칙 설정의 핵심 요소</h3><ul class="space-y-3"><li class="flex items-start"><i class="fas fa-check-circle text-blue-400 mt-1 mr-2"></i><div><span class="font-bold text-blue-300">name</span>: 규칙의 이름 (알아보기 쉽게 작성)</div></li><li class="flex items-start"><i class="fas fa-check-circle text-blue-400 mt-1 mr-2"></i><div><span class="font-bold text-blue-300">type</span>: 검증 유형 (not_null, regex_pattern 등)</div></li><li class="flex items-start"><i class="fas fa-check-circle text-blue-400 mt-1 mr-2"></i><div><span class="font-bold text-blue-300">params</span>: 검증에 필요한 파라미터 (선택적)</div></li></ul></div></div>
+                    <div class="col-span-7"><h3 class="text-xl font-bold text-blue-300 mb-4 flex items-center"><i class="fas fa-code mr-2"></i>규칙 정의 예시</h3><div class="code-block relative text-gray-100"><pre><code>rules_config = {
+        # 1. 컬럼별 규칙 정의
+        <span class="text-green-400">"columns"</span>: {
+            <span class="text-yellow-400">"ced"</span>: [  <span class="text-gray-400"># 'ced' 컬럼에 대한 규칙 목록</span>
+                {<span class="code-highlight">"name": "CED 검증", "type": "not_null"</span>},
+                {<span class="code-highlight">"name": "CED 포맷검증", "type": "regex_pattern",
+                 "params": {"pattern": r"^\d{8}$"}</span>}
+            ],
+            <span class="text-gray-400"># ... 다른 컬럼 규칙들 ...</span>
+        },
+
+        # 2. 테이블 전체 대상 규칙 정의
+        <span class="text-green-400">"table_level_rules"</span>: [
+            {
+                <span class="code-highlight">"name": "매출_급변동_범용감지(업종별)",
+                "type": "aggregate_value_trend",</span>
+                <span class="text-gray-400"># ... 세부 파라미터 ...</span>
+            }
+        ]
+    }</code></pre></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide-separator"></div>
+
+        <div id="slide-9" class="slide bg-slate-900">
+            <div class="bg-pattern"></div><div class="grid-lines"></div><div class="accent-bar"></div>
+            <div class="content text-white">
+                 <div class="mb-6"><h1 class="text-4xl font-bold flex items-center"><span class="text-4xl mr-3">🔍</span>심층 분석: <span class="text-blue-400 ml-2">매출 급변동 감지 예시</span></h1></div>
+                <div class="flex space-x-6 h-full">
+                    <div class="w-1/2"><div class="mb-6"><h3 class="text-2xl font-medium text-blue-300 mb-3">도시별 매출 급변동 감지 원리</h3><p class="text-gray-300 mb-4"><span class="bg-blue-900 text-blue-200 px-2 py-1 rounded font-mono">aggregate_value_trend</span> 규칙은 시계열 데이터의 급격한 변화를 감지합니다. 아래 예시는 <span class="font-semibold">도시별 매출이 과거 7일 평균 대비 20% 이상 변동</span>하는 경우를 검출합니다.</p></div><div class="bg-slate-800 rounded-lg p-4 mb-4"><h4 class="text-lg font-medium mb-3">매출 변동 감지 시각화</h4><div class="relative" id="chart" style="height: 260px;"></div></div><div class="mt-4"><h4 class="text-lg font-medium mb-2">주요 활용 포인트</h4><ul class="space-y-2"><li class="flex items-start"><i class="fas fa-check-circle text-green-400 mt-1 mr-2"></i><span>갑작스러운 매출 변화 감지로 데이터 오류 또는 비즈니스 이슈 조기 발견</span></li><li class="flex items-start"><i class="fas fa-check-circle text-green-400 mt-1 mr-2"></i><span>도시별, 업종별 등 다양한 그룹핑 기준 적용 가능</span></li><li class="flex items-start"><i class="fas fa-check-circle text-green-400 mt-1 mr-2"></i><span>임계값(threshold) 조정으로 민감도 설정 가능</span></li></ul></div></div>
+                    <div class="w-1/2"><div class="mb-4"><h3 class="text-2xl font-medium text-blue-300 mb-3">규칙 설정 코드</h3><p class="text-gray-300 mb-3">아래는 <span class="font-semibold">도시별 매출합계</span>가 <span class="font-semibold">과거 7일 평균 대비 20% 이상</span> 변동을 감지하는 규칙 설정입니다.</p></div><div class="code-block"><pre class="whitespace-pre-wrap"><span class="code-comment"># 도시별_매출합계_과거7일대비_변동 규칙</span>
+    <span class="code-key">name</span>: 도시별_매출합계_과거7일대비_변동
+    <span class="code-key">type</span>: aggregate_value_trend
+    <span class="code-key">params</span>:
+      <span class="code-key">column_to_aggregate</span>: <span class="code-string">"aso_saa"</span>          <span class="code-comment"># 집계할 컬럼: 추정매출금액</span>
+      <span class="code-key">aggregate_function</span>: <span class="code-string">"SUM"</span>               <span class="code-comment"># 집계 방식: 합계</span>
+      <span class="code-key">group_by_columns</span>: [<span class="code-string">"wid_cty_cd"</span>]        <span class="code-comment"># 그룹 기준: 광역도시코드</span>
+      <span class="code-key">comparison_periods</span>:                     <span class="code-comment"># 비교 기준</span>
+        <span class="code-key">type</span>: <span class="code-string">"average_of_previous_n_days"</span>
+        <span class="code-key">n</span>: 7                                  <span class="code-comment"># 과거 7일 평균</span>
+      <span class="code-key">threshold_ratio_increase</span>: 0.20          <span class="code-comment"># 20% 이상 증가 시 오류</span>
+      <span class="code-key">threshold_ratio_decrease</span>: 0.20          <span class="code-comment"># 20% 이상 감소 시 오류</span></pre></div><div class="mt-6 bg-blue-900/30 p-4 rounded-lg border border-blue-700"><h4 class="flex items-center text-lg font-medium text-blue-300 mb-2"><i class="fas fa-lightbulb text-yellow-400 mr-2"></i>실제 활용 시나리오</h4><p class="text-gray-300 mb-2">이 규칙은 다음과 같은 상황을 감지할 수 있습니다:</p><ul class="space-y-2"><li class="flex items-start"><i class="fas fa-exclamation-triangle text-yellow-500 mt-1 mr-2"></i><span>특정 도시의 매출이 갑자기 20% 이상 하락 → 데이터 누락 가능성</span></li><li class="flex items-start"><i class="fas fa-exclamation-triangle text-yellow-500 mt-1 mr-2"></i><span>특정 도시의 매출이 갑자기 20% 이상 상승 → 중복 데이터 가능성</span></li><li class="flex items-start"><i class="fas fa-info-circle text-blue-400 mt-1 mr-2"></i><span>명절, 이벤트 등 특수 상황은 별도 예외 처리 가능</span></li></ul></div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide-separator"></div>
+
+        <div id="slide-10" class="slide bg-slate-900">
+            <div class="bg-pattern"></div><div class="grid-lines"></div><div class="accent-bar"></div>
+            <div class="content text-white">
+                <div class="mb-6"><h1 class="text-4xl font-bold flex items-center"><span class="text-4xl mr-3">🤖</span>AI 기반 검증 결과 분석 보고서 <span class="text-base ml-4 px-2 py-1 bg-yellow-500 text-black rounded font-bold">SAMPLE</span></h1></div>
+                <div class="grid grid-cols-3 gap-4 mb-4 text-center">
+                    <div class="report-card"><h3 class="text-lg text-gray-400">검증 대상</h3><p class="text-xl font-bold">bmalsa0026 (2025-06-25)</p></div>
+                    <div class="report-card"><h3 class="text-lg text-gray-400">총 데이터 건수</h3><p class="text-xl font-bold">160,528 건</p></div>
+                    <div class="report-card"><h3 class="text-lg text-red-400">발견된 오류</h3><p class="text-xl font-bold text-red-400">20 건 (4개 유형)</p></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-blue-300 mb-3 flex items-center"><i class="fas fa-magnifying-glass-chart mr-2"></i>주요 이슈 분석</h2>
+                        <div class="space-y-3">
+                            <div class="report-card"><h4 class="font-bold">1️⃣ 업종코드 분포 변화 (2건)</h4><p class="text-sm text-gray-300">고유 업종코드 수가 과거 대비 18% 크게 감소했습니다.</p></div>
+                            <div class="report-card"><h4 class="font-bold">2️⃣ 업종별 매출 급증 (13건)</h4><p class="text-sm text-gray-300">기타 금융업, 보험업 등에서 50% 이상 매출이 급증했습니다.</p></div>
+                            <div class="report-card"><h4 class="font-bold">3️⃣ 전체 매출 감소 (1건)</h4><p class="text-sm text-gray-300">전체 매출이 과거 7일 평균 대비 20.12% 감소했습니다.</p></div>
+                            <div class="report-card"><h4 class="font-bold">4️⃣ 지역별 매출 감소 (4건)</h4><p class="text-sm text-gray-300">서울(-33%), 광주(-28%) 등 주요 지역에서 20% 이상 매출이 감소했습니다.</p></div>
+                        </div>
+                    </div>
+                    <div>
+                         <h2 class="text-2xl font-bold text-blue-300 mb-3 flex items-center"><i class="fas fa-lightbulb mr-2"></i>권장 조치사항</h2>
+                        <div class="space-y-3">
+                            <div class="report-card border-l-4 border-red-500"><h4 class="font-bold text-red-400">🚨 즉시 조치 (24시간 내)</h4><ul class="text-sm text-gray-300 list-disc list-inside mt-2"><li>데이터 수집 시스템 및 ETL 프로세스 로그 분석</li><li>서울 지역 가맹점 데이터 전송 상태 확인</li><li>금융/보험업 대량 거래 내역 샘플링 검증</li></ul></div>
+                            <div class="report-card border-l-4 border-yellow-500"><h4 class="font-bold text-yellow-400">🔧 단기 조치 (1주일 내)</h4><ul class="text-sm text-gray-300 list-disc list-inside mt-2"><li>외부 경제 지표와 교차 검증 (소비 지표, 타사 트렌드)</li><li>매출 이상 패턴 자동 알림 임계치 재조정</li></ul></div>
+                             <div class="report-card border-l-4 border-blue-500"><h4 class="font-bold text-blue-400">🛠️ 중장기 조치 (1개월 내)</h4><ul class="text-sm text-gray-300 list-disc list-inside mt-2"><li>업종코드 분류 기준 표준화 검토</li><li>실시간 데이터 검증 룰 고도화</li></ul></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 report-card">
+                    <h2 class="text-2xl font-bold text-blue-300 mb-3 flex items-center"><i class="fas fa-table mr-2"></i>상세 분석: 매출 급증/급감 테이블</h2>
+                    <table class="report-table">
+                        <thead><tr><th>구분</th><th>항목</th><th>현재 값</th><th>변화율</th></tr></thead>
+                        <tbody>
+                            <tr><td>업종매출급증</td><td>기타 금융업(F017001)</td><td>35,668,160원</td><td class="rate-up">+207.11%</td></tr>
+                            <tr><td>업종매출급증</td><td>보험업(F013001)</td><td>48,114,700원</td><td class="rate-up">+217.42%</td></tr>
+                            <tr><td>전체매출</td><td>전국</td><td>1,401억원</td><td class="rate-down">-20.12%</td></tr>
+                            <tr><td>지역매출감소</td><td>서울(11)</td><td>363억원</td><td class="rate-down">-33.28%</td></tr>
+                            <tr><td>지역매출감소</td><td>광주(29)</td><td>29억원</td><td class="rate-down">-27.79%</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide-separator"></div>
+
+        <div id="slide-11" class="slide bg-slate-900">
+             <div class="bg-pattern"></div><div class="grid-lines"></div><div class="accent-bar"></div>
+            <div class="content text-white">
+                <div class="mb-8"><h1 class="text-4xl font-bold">기대 효과 및 향후 방향</h1><p class="text-blue-300 mt-2 text-xl">데이터 품질 관리의 미래를 향해</p></div>
+                <div class="grid grid-cols-2 gap-10 mb-8">
+                    <div><h2 class="text-2xl font-bold mb-6 flex items-center"><i class="fas fa-star text-yellow-400 mr-3"></i>기대 효과</h2><div class="space-y-4"><div class="feature-item"><div class="icon-feature"><i class="fas fa-robot text-2xl"></i></div><div><h3 class="text-xl font-semibold text-blue-300">자동화</h3><p>데이터 검증 작업을 자동화하여 인적 오류를 줄이고 시간을 절약합니다.</p></div></div><div class="feature-item"><div class="icon-feature"><i class="fas fa-shield-alt text-2xl"></i></div><div><h3 class="text-xl font-semibold text-blue-300">신뢰성</h3><p>정량적 기준에 따른 데이터 품질 측정으로 데이터의 신뢰도를 확보합니다.</p></div></div><div class="feature-item"><div class="icon-feature"><i class="fas fa-bell text-2xl"></i></div><div><h3 class="text-xl font-semibold text-blue-300">조기 경보</h3><p>데이터 문제 발생 시 즉각적으로 인지하고 대응할 수 있습니다.</p></div></div><div class="feature-item"><div class="icon-feature"><i class="fas fa-expand-arrows-alt text-2xl"></i></div><div><h3 class="text-xl font-semibold text-blue-300">확장성</h3><p>bmalsa0026 외 다른 테이블에도 손쉽게 동일한 검증 프레임워크를 적용할 수 있습니다.</p></div></div></div></div>
+                    <div><h2 class="text-2xl font-bold mb-6 flex items-center"><i class="fas fa-road text-green-400 mr-3"></i>향후 방향</h2><div class="card"><div class="space-y-6"><div class="flex items-start"><div class="bg-blue-500 bg-opacity-20 p-3 rounded-lg mr-4 flex-shrink-0"><i class="fas fa-chart-bar text-blue-400 text-xl"></i></div><div><h3 class="text-xl font-semibold text-blue-300">검증 결과 시각화 대시보드 구축</h3><p class="text-gray-300">데이터 품질 현황을 한눈에 파악할 수 있는 직관적인 대시보드를 구현하여 의사결정 지원</p></div></div><div class="flex items-start"><div class="bg-green-500 bg-opacity-20 p-3 rounded-lg mr-4 flex-shrink-0"><i class="fas fa-comment-alt text-green-400 text-xl"></i></div><div><h3 class="text-xl font-semibold text-green-300">자동 알림 기능(SMS, 이메일) 연동</h3><p class="text-gray-300">문제 발생 시 즉시 담당자에게 알림을 전송하여 신속한 대응 체계 구축</p></div></div><div class="flex items-start"><div class="bg-purple-500 bg-opacity-20 p-3 rounded-lg mr-4 flex-shrink-0"><i class="fas fa-brain text-purple-400 text-xl"></i></div><div><h3 class="text-xl font-semibold text-purple-300">AI 연동 보고서 생성</h3><p class="text-gray-300">검증 결과를 AI Agent와 연계하여, 보고서 생성 자동화</p></div></div></div></div></div>
+                </div>
+                <div class="thank-you-section mt-auto"><div class="flex justify-between items-center"><div><h2 class="text-2xl font-bold">감사합니다</h2><p class="text-gray-300">질문이나 제안사항이 있으시면 언제든지 말씀해 주세요.</p></div><div class="text-right"><div class="text-5xl text-blue-400 mb-2"><i class="fas fa-question-circle"></i></div><p class="text-lg font-semibold text-blue-300">Q&A</p></div></div></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Script from page_1.html for animated data dots
+        const dotsContainer = document.getElementById('dataDots');
+        if (dotsContainer) {
+            const numDots = 50;
+            for (let i = 0; i < numDots; i++) {
+                const dot = document.createElement('div');
+                dot.classList.add('data-dot');
+                const left = Math.random() * 100;
+                const top = Math.random() * 100;
+                dot.style.left = `${left}%`;
+                dot.style.top = `${top}%`;
+                dot.style.opacity = (Math.random() * 0.5 + 0.2).toString();
+                dotsContainer.appendChild(dot);
+            }
+        }
+
+        // Script from page_9.html for D3.js chart
+        document.addEventListener('DOMContentLoaded', function() {
+            const chartContainer = document.getElementById('chart');
+            if (chartContainer) {
+                const width = chartContainer.clientWidth;
+                const height = 260;
+                const margin = {top: 20, right: 30, bottom: 40, left: 50};
+                const innerWidth = width - margin.left - margin.right;
+                const innerHeight = height - margin.top - margin.bottom;
+
+                const svg = d3.select('#chart').append('svg').attr('width', width).attr('height', height);
+                const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+                const data = [ {day: 1, sales: 100}, {day: 2, sales: 105}, {day: 3, sales: 95}, {day: 4, sales: 110}, {day: 5, sales: 100}, {day: 6, sales: 105}, {day: 7, sales: 98}, {day: 8, sales: 103}, {day: 9, sales: 102}, {day: 10, sales: 104}, {day: 11, sales: 100}, {day: 12, sales: 101}, {day: 13, sales: 130}, {day: 14, sales: 75} ];
+                const x = d3.scaleLinear().domain([1, 14]).range([0, innerWidth]);
+                const y = d3.scaleLinear().domain([0, d3.max(data, d => d.sales) * 1.1]).range([innerHeight, 0]);
+                const movingAvg = [];
+                for (let i = 7; i < data.length; i++) {
+                    const avg = d3.mean(data.slice(i-7, i), d => d.sales);
+                    movingAvg.push({day: data[i].day, avg: avg});
+                }
+                g.append('g').attr('transform', `translate(0,${innerHeight})`).call(d3.axisBottom(x).ticks(7).tickFormat(d => `D${d}`)).attr('color', '#718096').selectAll('text').style('fill', '#cbd5e0');
+                g.append('g').call(d3.axisLeft(y).ticks(5)).attr('color', '#718096').selectAll('text').style('fill', '#cbd5e0');
+                movingAvg.forEach(d => {
+                    g.append('rect').attr('x', x(d.day) - 5).attr('y', y(d.avg * 1.2)).attr('width', 10).attr('height', y(d.avg * 0.8) - y(d.avg * 1.2)).attr('fill', 'rgba(248, 113, 113, 0.1)').attr('stroke', 'none');
+                    g.append('line').attr('x1', x(d.day) - 5).attr('x2', x(d.day) + 5).attr('y1', y(d.avg * 1.2)).attr('y2', y(d.avg * 1.2)).attr('stroke', '#f87171').attr('stroke-width', 1).attr('stroke-dasharray', '3,3');
+                    g.append('line').attr('x1', x(d.day) - 5).attr('x2', x(d.day) + 5).attr('y1', y(d.avg * 0.8)).attr('y2', y(d.avg * 0.8)).attr('stroke', '#f87171').attr('stroke-width', 1).attr('stroke-dasharray', '3,3');
+                });
+                const avgLine = d3.line().x(d => x(d.day)).y(d => y(d.avg)).curve(d3.curveMonotoneX);
+                g.append('path').datum(movingAvg).attr('fill', 'none').attr('stroke', '#60a5fa').attr('stroke-width', 2).attr('stroke-dasharray', '5,5').attr('d', avgLine);
+                const line = d3.line().x(d => x(d.day)).y(d => y(d.sales)).curve(d3.curveMonotoneX);
+                g.append('path').datum(data).attr('fill', 'none').attr('stroke', '#10b981').attr('stroke-width', 2).attr('d', line);
+                g.selectAll('.dot').data(data).enter().append('circle').attr('class', 'dot').attr('cx', d => x(d.day)).attr('cy', d => y(d.sales)).attr('r', 4).attr('fill', d => (d.day >= 13) ? '#f87171' : '#10b981');
+                g.append('text').attr('x', x(13) + 5).attr('y', y(130) - 10).attr('fill', '#f87171').attr('font-size', '12px').text('+30% 증가');
+                g.append('text').attr('x', x(14) - 35).attr('y', y(75) + 20).attr('fill', '#f87171').attr('font-size', '12px').text('-25% 감소');
+            }
+        });
+    </script>
+</body>
+</html>

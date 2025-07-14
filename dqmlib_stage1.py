@@ -8,6 +8,15 @@ import calendar
 from tqdm import tqdm
 import os
 import time
+import logging
+logger = logging.getLogger(__name__)
+if not logger.handlers:
+    _handler = logging.StreamHandler()
+    _formatter = logging.Formatter("[%(levelname)s] %(message)s")
+    _handler.setFormatter(_formatter)
+    logger.addHandler(_handler)
+    logger.setLevel(logging.INFO)
+
 
 # --- 스키마 기준 파일 저장 디렉토리 (사용자 환경에 맞게 설정 가능) ---
 SCHEMA_BASELINE_DIR = "./schema_baselines/"
@@ -17,11 +26,11 @@ try:
 except ImportError:
     class DatalabQueryProcessor:
         def __init__(self, *args, **kwargs):
-            print("INFO: Mock DatalabQueryProcessor가 초기화되었습니다.")
+            logger.info("INFO: Mock DatalabQueryProcessor가 초기화되었습니다.")
 
         def fetch_to_pandas(self, query, engine=None, limit=None):
             query_preview = query[:150].replace('\n', ' ') + "..."
-            print(f"INFO: Mock DatalabQueryProcessor - fetch_to_pandas 호출됨 (Query: {query_preview})")
+            logger.info(f"INFO: Mock DatalabQueryProcessor - fetch_to_pandas 호출됨 (Query: {query_preview})")
             if "COUNT(1) AS agg_value" in query or "COUNT(*) AS agg_value" in query:
                 if "GROUP BY" in query and re.search(r"SELECT .*?, COUNT", query, re.IGNORECASE):
                     mock_dates = [(datetime.now() - timedelta(days=i)).strftime("%Y%m%d") for i in range(5)]
@@ -76,7 +85,7 @@ except ImportError:
             return pd.DataFrame()
 
         def describe_table(self, table_name, engine=None):
-            print(f"INFO: Mock DatalabQueryProcessor - describe_table 호출됨 (Table: {table_name}, Engine: {engine})")
+            logger.info(f"INFO: Mock DatalabQueryProcessor - describe_table 호출됨 (Table: {table_name}, Engine: {engine})")
             if table_name in ["mdb.bmalsa0026", "MOCK_TABLE_FOR_SCHEMA_TEST", "edb.hmcbsi0015",
                               "mdb.monthly_tourism_sales"]:  # 테스트용 테이블명 추가
                 if engine and engine.lower() == "hive":
@@ -120,9 +129,9 @@ except ImportError:
 
         def save_pandas_to_datalake(self, df, db_name, table_name, partition_column, overwrite_tf=False):
             mode = "overwrite" if overwrite_tf else "append";
-            print(
+            logger.info(
                 f"INFO: Mock DatalabQueryProcessor - save_pandas_to_datalake 호출됨.\n      (df ({len(df)} rows), db_name='{db_name}', table_name='{table_name}', partition_column='{partition_column}', mode='{mode}')")
-            print(
+            logger.info(
                 f"INFO: Mock - DataFrame을 Hive 테이블 '{db_name}.{table_name}' (파티션: {partition_column})에 '{mode}' 모드로 저장 시뮬레이션 완료.");
             return True
 
@@ -159,11 +168,11 @@ def get_month_start_end_dates(yyyymm_str):
 
 def _get_historical_aggregate_value(q_processor, table, agg_column, agg_func, date_col_in_db, date_col_format_in_db,
                                     is_partitioned_by_date_col, target_historical_period, engine, base_filter="1=1"):
-    if not q_processor: print("경고: QueryProcessor가 없어 과거 집계값을 조회할 수 없습니다."); return 0.0
+    if not q_processor: logger.info("경고: QueryProcessor가 없어 과거 집계값을 조회할 수 없습니다."); return 0.0
     where_clause_for_date = "1=1"
     try:
         if date_col_format_in_db == "YYYYMM":
-            if not (len(target_historical_period) == 6 and target_historical_period.isdigit()): print(
+            if not (len(target_historical_period) == 6 and target_historical_period.isdigit()): logger.info(
                 f"경고: date_col_format_in_db 'YYYYMM', target_historical_period ('{target_historical_period}') 형식 오류."); return 0.0
             where_clause_for_date = f"{date_col_in_db} = '{target_historical_period}'"
         elif date_col_format_in_db == "YYYYMMDD":
@@ -174,14 +183,14 @@ def _get_historical_aggregate_value(q_processor, table, agg_column, agg_func, da
                     target_historical_period);
                 where_clause_for_date = f"{date_col_in_db} BETWEEN '{start_day}' AND '{end_day}'" if is_partitioned_by_date_col else f"SUBSTRING(CAST({date_col_in_db} AS STRING), 1, 6) = '{target_historical_period}'"
             else:
-                print(
+                logger.info(
                     f"경고: date_col_format_in_db 'YYYYMMDD', target_historical_period ('{target_historical_period}') 형식 오류.");
                 return 0.0
         else:
-            print(f"경고: 지원하지 않는 date_column_format '{date_col_format_in_db}'.");
+            logger.info(f"경고: 지원하지 않는 date_column_format '{date_col_format_in_db}'.");
             return 0.0
     except ValueError as ve:
-        print(f"경고: 날짜 변환 또는 처리 오류로 과거 집계값 조회 불가 - {ve}");
+        logger.info(f"경고: 날짜 변환 또는 처리 오류로 과거 집계값 조회 불가 - {ve}");
         return 0.0
     actual_agg_column = '*' if agg_func.upper() == 'COUNT' and agg_column in ['*', '1'] else agg_column
     query = f"SELECT {agg_func}({actual_agg_column}) AS agg_value FROM {table} WHERE {where_clause_for_date} AND {base_filter}"
@@ -190,18 +199,18 @@ def _get_historical_aggregate_value(q_processor, table, agg_column, agg_func, da
         return float(result_df.iloc[0]['agg_value']) if not result_df.empty and pd.notna(
             result_df.iloc[0]['agg_value']) else 0.0
     except Exception as e:
-        print(f"경고: 과거 집계값 조회 중 오류 ({table}, {agg_column}, {target_historical_period}): {e}");
+        logger.info(f"경고: 과거 집계값 조회 중 오류 ({table}, {agg_column}, {target_historical_period}): {e}");
         return 0.0
 
 
 def _get_historical_grouped_aggregates(q_processor, table, agg_column, agg_func, group_by_columns, date_col_in_db,
                                        date_col_format_in_db, is_partitioned_by_date_col, target_historical_period,
                                        engine, base_filter="1=1"):
-    if not q_processor: print("경고: QueryProcessor가 없어 과거 그룹별 집계값을 조회할 수 없습니다."); return {}
+    if not q_processor: logger.info("경고: QueryProcessor가 없어 과거 그룹별 집계값을 조회할 수 없습니다."); return {}
     where_clause_for_date = "1=1"
     try:
         if date_col_format_in_db == "YYYYMM":
-            if not (len(target_historical_period) == 6 and target_historical_period.isdigit()): print(
+            if not (len(target_historical_period) == 6 and target_historical_period.isdigit()): logger.info(
                 f"경고: 그룹별 과거 집계 - date_col_format_in_db 'YYYYMM', target_historical_period ('{target_historical_period}') 형식 오류."); return {}
             where_clause_for_date = f"{date_col_in_db} = '{target_historical_period}'"
         elif date_col_format_in_db == "YYYYMMDD":
@@ -212,14 +221,14 @@ def _get_historical_grouped_aggregates(q_processor, table, agg_column, agg_func,
                     target_historical_period);
                 where_clause_for_date = f"{date_col_in_db} BETWEEN '{start_day}' AND '{end_day}'" if is_partitioned_by_date_col else f"SUBSTRING(CAST({date_col_in_db} AS STRING), 1, 6) = '{target_historical_period}'"
             else:
-                print(
+                logger.info(
                     f"경고: 그룹별 과거 집계 - date_col_format_in_db 'YYYYMMDD', target_historical_period ('{target_historical_period}') 형식 오류.");
                 return {}
         else:
-            print(f"경고: 그룹별 과거 집계 - 지원하지 않는 date_column_format '{date_col_format_in_db}'.");
+            logger.info(f"경고: 그룹별 과거 집계 - 지원하지 않는 date_column_format '{date_col_format_in_db}'.");
             return {}
     except ValueError as ve:
-        print(f"경고: 그룹별 과거 집계 - 날짜 변환 오류: {ve}");
+        logger.info(f"경고: 그룹별 과거 집계 - 날짜 변환 오류: {ve}");
         return {}
     gb_cols_str = ", ".join(group_by_columns);
     actual_agg_column = '*' if agg_func.upper() == 'COUNT' and agg_column in ['*', '1'] else agg_column
@@ -235,7 +244,7 @@ def _get_historical_grouped_aggregates(q_processor, table, agg_column, agg_func,
                 row['agg_value']) if pd.notna(row['agg_value']) else 0.0
         return output_map
     except Exception as e:
-        print(
+        logger.info(
             f"경고: 과거 그룹별 집계값 조회 중 오류 ({table}, {agg_column}, 그룹: {group_by_columns}, 기간: {target_historical_period}): {e}");
         return {}
 
@@ -316,7 +325,7 @@ def check_distribution_change(series, column_name, params, q_processor=None):
     historical_profile = None;
     current_profile_data = {'unique_codes': [], 'frequencies': {}, 'total_unique_count': 0, 'count': 0, 'null_count': 0}
     if series is None or series.empty:
-        print(f"정보: 컬럼 '{column_name}' 현재 데이터 비어 분포 변경 검사 일부 수행/건너뜀.")
+        logger.info(f"정보: 컬럼 '{column_name}' 현재 데이터 비어 분포 변경 검사 일부 수행/건너뜀.")
     else:
         current_s = series.astype(str);
         vc = current_s.value_counts(dropna=False);
@@ -400,7 +409,7 @@ def check_distribution_change(series, column_name, params, q_processor=None):
         if not errors: errors.append(
             {'column': column_name, 'error_type': 'PROFILE_LOAD_ERROR', 'message': "과거 분포 프로파일을 가져올 수 없습니다."})
         return errors
-    if historical_profile.get('count', 0) == 0 and current_profile_data.get('count', 0) > 0: print(
+    if historical_profile.get('count', 0) == 0 and current_profile_data.get('count', 0) > 0: logger.info(
         f"정보: '{column_name}' 과거 분포 프로파일 비어있으나 현재 데이터 있어 신규 코드 위주 검사."); historical_profile = {'unique_codes': [],
                                                                                                'frequencies': {},
                                                                                                'total_unique_count': 0,
@@ -457,7 +466,7 @@ def check_numeric_volatility(current_df_series, column_name, params, q_processor
     errors = [];
     historical_profile_map = {};
     group_by_columns = params.get('group_by_columns')
-    if current_df_series is None or current_df_series.empty: print(
+    if current_df_series is None or current_df_series.empty: logger.info(
         f"정보: 컬럼 '{column_name}' 현재 데이터 비어 변동성 검사 건너뜀."); return errors
     if 'historical_data_table' in params and 'historical_data_column' in params:
         if not q_processor: errors.append(
@@ -473,7 +482,7 @@ def check_numeric_volatility(current_df_series, column_name, params, q_processor
         try:
             profile_df_db = q_processor.fetch_to_pandas(query=query, engine=db_engine, limit=None)
             if profile_df_db.empty:
-                print(f"경고: DB에서 '{hist_col}' 과거 숫자 데이터 없음 (컬럼:{column_name}, 그룹:{group_by_columns}).")
+                logger.info(f"경고: DB에서 '{hist_col}' 과거 숫자 데이터 없음 (컬럼:{column_name}, 그룹:{group_by_columns}).")
             else:
                 for _, row in profile_df_db.iterrows():
                     profile = {'mean': float(row['mean_val']) if pd.notna(row['mean_val']) else 0.0,
@@ -527,7 +536,7 @@ def check_numeric_volatility(current_df_series, column_name, params, q_processor
             errors.append(
                 {'column': column_name, 'error_type': 'CONFIG_ERROR', 'message': "과거 숫자 프로파일 설정 누락"});
             return errors
-    if not historical_profile_map: print(f"경고: '{column_name}' 과거 프로파일 없음. 변동성 검사 불가."); return errors
+    if not historical_profile_map: logger.info(f"경고: '{column_name}' 과거 프로파일 없음. 변동성 검사 불가."); return errors
     method, thresholds = params.get("method", "z_score").lower(), params.get("thresholds", {})
     num_series_curr = pd.to_numeric(current_df_series, errors='coerce').fillna(0.0)
     for idx, curr_val in tqdm(num_series_curr.items(), total=len(num_series_curr), desc=f"VOLATILITY '{column_name}'",
@@ -543,7 +552,7 @@ def check_numeric_volatility(current_df_series, column_name, params, q_processor
                 curr_grp_key = tuple(str(full_current_df.loc[idx, col]) if pd.notna(
                     full_current_df.loc[idx, col]) else '__NONE_GROUP_KEY__' for col in group_by_columns)
             except KeyError:
-                print(f"경고: 그룹 키 생성 중 오류 (인덱스 {idx}). 건너뜀.");
+                logger.info(f"경고: 그룹 키 생성 중 오류 (인덱스 {idx}). 건너뜀.");
                 continue
             grp_key_str = str(curr_grp_key);
             hist_prof = historical_profile_map.get(curr_grp_key)
@@ -722,7 +731,7 @@ def check_aggregate_value_trend(df, params, q_processor=None):
 
             final_comp_label = f"이전 {n_p}{'개월' if 'months' in comp_type else '일'}차 ({target_hist_p_str})"
         except ValueError as ve_off:
-            print(f"경고: 과거 기간 문자열 생성 오류 ({ve_off}).")
+            logger.info(f"경고: 과거 기간 문자열 생성 오류 ({ve_off}).")
 
     # 'average' 타입인 경우 -> 기존의 for 루프 로직 사용
     elif "average" in comp_type:
@@ -738,7 +747,7 @@ def check_aggregate_value_trend(df, params, q_processor=None):
                     target_hist_p_str = _get_offset_date_str(base_offset, days_offset=-i, current_format_str="%Y%m%d",
                                                              output_format_str="%Y%m%d")
             except ValueError as ve_off:
-                print(f"경고: 과거 기간 문자열 생성 오류 ({ve_off}). 건너뜀.")
+                logger.info(f"경고: 과거 기간 문자열 생성 오류 ({ve_off}). 건너뜀.")
                 continue
 
             period_hist_data = _get_historical_grouped_aggregates(q_processor, table, agg_col, agg_func,
@@ -761,7 +770,7 @@ def check_aggregate_value_trend(df, params, q_processor=None):
             final_comp_label = f"이전 {len(set(actual_hist_labels))}{'개월' if 'months' in comp_type else '일'}({','.join(sorted(list(set(actual_hist_labels))))}) 평균"
         else:
             final_comp_label = f"이전 {n_p}{'개월' if 'months' in comp_type else '일'} 평균 (조회 불가)"
-            print(f"정보: '{agg_col}' 과거 평균 집계값 조회 불가. 과거 평균 0으로 간주.")
+            logger.info(f"정보: '{agg_col}' 과거 평균 집계값 조회 불가. 과거 평균 0으로 간주.")
 
     # --- 비교 및 오류 생성 ---
     all_comp_keys = set(current_aggregates_map.keys()) | set(final_hist_map.keys())
@@ -841,7 +850,7 @@ def check_schema_change(df_placeholder, params, q_processor=None):
             {'error_type': 'DB_SCHEMA_FETCH_ERROR', 'table_name': table_name, 'engine': engine_name,
              'message': f"테이블 '{table_name}' 스키마 조회 결과 None."}); return errors
         if raw_current_schema_df.empty:
-            print(f"경고: 테이블 '{table_name}' 스키마 정보 비어있음.")
+            logger.info(f"경고: 테이블 '{table_name}' 스키마 정보 비어있음.")
         else:
             if engine_name.lower() == "edw":
                 expected_oracle_cols = ['COLUMN_NAME', 'DATA_TYPE', 'NULLABLE', 'COLUMN_ID'];
@@ -902,7 +911,7 @@ def check_schema_change(df_placeholder, params, q_processor=None):
             try:
                 with open(baseline_schema_file_path, 'w', encoding='utf-8') as f:
                     json.dump(current_schema_list_standardized, f, ensure_ascii=False, indent=4)
-                print(f"정보: '{table_name}' 기준 스키마 강제 업데이트됨: {baseline_schema_file_path}");
+                logger.info(f"정보: '{table_name}' 기준 스키마 강제 업데이트됨: {baseline_schema_file_path}");
                 return []
             except Exception as e_write:
                 errors.append({'error_type': 'BASELINE_SCHEMA_WRITE_ERROR',
@@ -913,7 +922,7 @@ def check_schema_change(df_placeholder, params, q_processor=None):
                 with open(baseline_schema_file_path, 'r', encoding='utf-8') as f:
                     expected_schema_list = json.load(f)
                 if not isinstance(expected_schema_list, list) or not all(
-                        'name' in x and 'type' in x for x in expected_schema_list): print(
+                        'name' in x and 'type' in x for x in expected_schema_list): logger.info(
                     f"경고: 기준 파일 형식 오류. 새 기준으로 사용."); expected_schema_list = []
             except Exception as e_read:
                 errors.append({'error_type': 'BASELINE_SCHEMA_READ_ERROR',
@@ -926,7 +935,7 @@ def check_schema_change(df_placeholder, params, q_processor=None):
             try:
                 with open(baseline_schema_file_path, 'w', encoding='utf-8') as f:
                     json.dump(current_schema_list_standardized, f, ensure_ascii=False, indent=4)
-                print(f"정보: '{table_name}' 현재 스키마를 기준으로 저장. 다음 실행부터 비교.");
+                logger.info(f"정보: '{table_name}' 현재 스키마를 기준으로 저장. 다음 실행부터 비교.");
                 return []
             except Exception as e_write_new:
                 errors.append({'error_type': 'BASELINE_SCHEMA_WRITE_ERROR',
@@ -1023,9 +1032,9 @@ def check_schema_change(df_placeholder, params, q_processor=None):
         try:
             with open(baseline_schema_file_path, 'w', encoding='utf-8') as f:
                 json.dump(current_schema_list_standardized, f, ensure_ascii=False, indent=4)
-            print(f"정보: 스키마 변경 없음. 기준 스키마 업데이트됨: {baseline_schema_file_path}")
+            logger.info(f"정보: 스키마 변경 없음. 기준 스키마 업데이트됨: {baseline_schema_file_path}")
         except Exception as e_upd:
-            print(f"경고: 기준 스키마 파일 자동 업데이트 실패: {e_upd}")
+            logger.info(f"경고: 기준 스키마 파일 자동 업데이트 실패: {e_upd}")
     return errors
 
 
@@ -1078,7 +1087,7 @@ def check_consecutive_trend(df, params, q_processor=None):
                 df_copy_for_date[date_column_for_trend].astype(str), format='%Y%m%d', errors='coerce')
 
         df_original_dates = df_copy_for_date.dropna(subset=[date_column_for_trend])
-        if df_original_dates.empty: print(
+        if df_original_dates.empty: logger.info(
             f"정보: 규칙 '{params.get('rule_name', 'N/A')}' - 현재 데이터 비어 추세 분석 불가."); return errors
         latest_date_in_current_df = df_original_dates[date_column_for_trend].max()  # datetime 객체
     except Exception as e_date_conv:
@@ -1162,7 +1171,7 @@ def check_consecutive_trend(df, params, q_processor=None):
                                                                engine=engine);
         historical_trend_data_df = pd.DataFrame() if historical_trend_data_df is None or historical_trend_data_df.empty else historical_trend_data_df;
         [
-            print(
+            logger.info(
                 f"정보: 규칙 '{params.get('rule_name', 'N/A')}' - 과거 DB 데이터 없음.")] if historical_trend_data_df.empty else None
     except Exception as e_hist_fetch:
         errors.append({'rule_type': 'consecutive_trend_check', 'error_type': 'DB_HISTORY_FETCH_ERROR',
@@ -1369,7 +1378,7 @@ class DataValidator:
                     try:
                         df_for_this_rule = df.query(current_filter_applied_str)
                         if df_for_this_rule.empty and not df.empty:
-                            print(f"경고: 규칙 '{params['rule_name']}' 필터 적용 결과 데이터 없음.")
+                            logger.info(f"경고: 규칙 '{params['rule_name']}' 필터 적용 결과 데이터 없음.")
                     except Exception as e:
                         all_errors.append(
                             {'column': col_name, 'rule_type': rule_type, 'rule_name': params['rule_name'],
@@ -1445,7 +1454,7 @@ class DataValidator:
                             try:
                                 err['error_row_data'] = df_for_this_rule.loc[err['row_index']].to_dict()
                             except KeyError:
-                                print(f"경고: 오류 행 데이터 조회 실패 (필터: {current_filter_applied_str}, 인덱스: {err['row_index']})")
+                                logger.info(f"경고: 오류 행 데이터 조회 실패 (필터: {current_filter_applied_str}, 인덱스: {err['row_index']})")
                     all_errors.extend(current_rule_errors)
 
         table_rules = self.rules_config.get('table_level_rules', [])
@@ -1463,7 +1472,7 @@ class DataValidator:
                 try:
                     df_for_this_rule_table = df.query(current_filter_applied_table_str)
                     if df_for_this_rule_table.empty and not df.empty:
-                        print(f"경고: 규칙 '{params['rule_name']}' 필터 적용 결과 데이터 없음.")
+                        logger.info(f"경고: 규칙 '{params['rule_name']}' 필터 적용 결과 데이터 없음.")
                 except Exception as e:
                     all_errors.append(
                         {'rule_type': rule_type, 'rule_name': params['rule_name'], 'error_type': 'CONFIG_ERROR',
@@ -1571,7 +1580,7 @@ def run_data_validation(dataframe, rules_config, query_processor_instance=None,
                             last_updtr_id='data_validator_script'
                             ):
         if dataframe is None:
-            print("오류: 검증할 DataFrame이 제공되지 않았습니다.")
+            logger.info("오류: 검증할 DataFrame이 제공되지 않았습니다.")
             return [{"error_type": "CONFIG_ERROR", "message": "검증 대상 DataFrame이 누락되었습니다."}], []
 
         start_time_total_run = time.time()
@@ -1581,7 +1590,7 @@ def run_data_validation(dataframe, rules_config, query_processor_instance=None,
 
         validator = DataValidator(rules_config, query_processor_instance)
 
-        print(f"\n--- 데이터 검증 실행 (DataFrame 크기: {dataframe.shape}) ---")
+        logger.info(f"\n--- 데이터 검증 실행 (DataFrame 크기: {dataframe.shape}) ---")
         all_errors, rule_execution_summary = validator.validate(dataframe, disable_outer_tqdm=disable_outer_tqdm,
                                                                 disable_inner_tqdm=disable_inner_tqdm)
         actual_execution_time_seconds = time.time() - start_time_total_run
@@ -1589,7 +1598,7 @@ def run_data_validation(dataframe, rules_config, query_processor_instance=None,
         all_errors = all_errors if all_errors is not None else []
         rule_execution_summary = rule_execution_summary if rule_execution_summary is not None else []
 
-        print(f"--- 데이터 검증 실행 완료 (오류 수: {len(all_errors)}) ---")
+        logger.info(f"--- 데이터 검증 실행 완료 (오류 수: {len(all_errors)}) ---")
 
         severity_counts = {'critical': {'failed_rules': 0, 'errors': 0},
                            'major': {'failed_rules': 0, 'errors': 0},
@@ -1608,7 +1617,7 @@ def run_data_validation(dataframe, rules_config, query_processor_instance=None,
         # ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
         if log_to_console and rule_execution_summary:
-            print("\n--- 검증 실행 요약 보고서 ---")
+            logger.info("\n--- 검증 실행 요약 보고서 ---")
             try:
                 summary_df_log = pd.DataFrame(rule_execution_summary)
                 # severity 컬럼 추가
@@ -1619,18 +1628,18 @@ def run_data_validation(dataframe, rules_config, query_processor_instance=None,
                 if not summary_df_log.empty and display_cols_log:
                     pd.set_option('display.max_columns', None)
                     pd.set_option('display.width', 1000)
-                    print(summary_df_log[display_cols_log].to_string(index=False))
+                    logger.info(summary_df_log[display_cols_log].to_string(index=False))
                 else:
-                    print("실행된 규칙에 대한 요약 정보가 없습니다.")
+                    logger.info("실행된 규칙에 대한 요약 정보가 없습니다.")
             except Exception as e_summary_log:
-                print(f"요약 보고서 콘솔 출력 중 오류 발생: {e_summary_log}")
+                logger.info(f"요약 보고서 콘솔 출력 중 오류 발생: {e_summary_log}")
 
         total_errors_found = len(all_errors)
         errors_to_process = all_errors
         log_summary_message_detailed = f"\n🚨 총 {total_errors_found}개의 상세 검증 오류 발견"
 
         if total_errors_found == 0 and log_to_console:
-            print("\n✅ 모든 검증 규칙을 통과했습니다!")
+            logger.info("\n✅ 모든 검증 규칙을 통과했습니다!")
         elif total_errors_found > 0:
             if max_errors_to_log is not None and 0 <= max_errors_to_log < total_errors_found:
                 errors_to_process = all_errors[:max_errors_to_log]
@@ -1638,20 +1647,20 @@ def run_data_validation(dataframe, rules_config, query_processor_instance=None,
             else:
                 log_summary_message_detailed += ":"
             if log_to_console:
-                print(log_summary_message_detailed)
+                logger.info(log_summary_message_detailed)
                 for i, error in enumerate(errors_to_process):
-                    print(f"\n--- 오류 {i + 1} ---")
+                    logger.info(f"\n--- 오류 {i + 1} ---")
                     for k, v in error.items():
-                        print(
+                        logger.info(
                             f"  {k}: {json.dumps(v, ensure_ascii=False, indent=2, default=str) if isinstance(v, (dict, list)) else v}")
 
         db_save_successful = False
         if save_to_hive:
             if not all([hive_db_name, hive_validation_runs_table_name, hive_summary_table_name, hive_errors_table_name,
                         hive_partition_value]):
-                print("경고: Hive 저장 필수 파라미터 누락. DB 저장 건너뜁니다.")
+                logger.info("경고: Hive 저장 필수 파라미터 누락. DB 저장 건너뜁니다.")
             elif not hasattr(query_processor_instance, 'save_pandas_to_datalake'):
-                print("경고: QueryProcessor에 save_pandas_to_datalake 없음. DB 저장 건너뜁니다.")
+                logger.info("경고: QueryProcessor에 save_pandas_to_datalake 없음. DB 저장 건너뜁니다.")
             else:
                 try:
                     current_run_id = f"run_{datetime.now().strftime('%Y%m%d%H%M%S%f')}"
@@ -1830,7 +1839,7 @@ def run_data_validation(dataframe, rules_config, query_processor_instance=None,
                                                        col in detailed_errors_df_to_save.columns]
                             detailed_errors_df_to_save = detailed_errors_df_to_save[existing_cols_for_order]
 
-                            print(f"INFO: dqm_detailed_errors 테이블에 저장 시도. {len(detailed_errors_df_to_save)} 건")
+                            logger.info(f"INFO: dqm_detailed_errors 테이블에 저장 시도. {len(detailed_errors_df_to_save)} 건")
                             query_processor_instance.save_pandas_to_datalake(
                                 detailed_errors_df_to_save,
                                 db_name=hive_db_name,
@@ -1838,16 +1847,16 @@ def run_data_validation(dataframe, rules_config, query_processor_instance=None,
                                 partition_column=hive_partition_column_name,
                                 overwrite_tf=hive_save_mode_is_overwrite
                             )
-                            print(f"INFO: dqm_detailed_errors 테이블에 저장 완료.")
+                            logger.info(f"INFO: dqm_detailed_errors 테이블에 저장 완료.")
 
-                    print(f"INFO: 모든 검증 결과를 DB 테이블에 저장 완료 (run_id: {current_run_id}).")
+                    logger.info(f"INFO: 모든 검증 결과를 DB 테이블에 저장 완료 (run_id: {current_run_id}).")
                     db_save_successful = True
                 except Exception as e_db_save:
-                    print(f"\n⚠️ 검증 결과를 DB에 저장 중 오류 발생: {e_db_save}")
+                    logger.info(f"\n⚠️ 검증 결과를 DB에 저장 중 오류 발생: {e_db_save}")
                     db_save_successful = False
 
         if not db_save_successful and output_report_path_if_db_fail:
-            print(f"INFO: DB 저장 실패/비활성화. 결과를 로컬 파일 '{output_report_path_if_db_fail}'에 저장합니다.")
+            logger.info(f"INFO: DB 저장 실패/비활성화. 결과를 로컬 파일 '{output_report_path_if_db_fail}'에 저장합니다.")
             try:
                 def safe_converter_file(o):
                     if isinstance(o, (datetime, np.datetime64, pd.Timestamp)): return o.isoformat()
@@ -1870,8 +1879,8 @@ def run_data_validation(dataframe, rules_config, query_processor_instance=None,
                     "error_log_notice"] = f"총 {total_errors_found} 오류 중 상위 {max_errors_to_log}개만 기록됨."
                 with open(output_report_path_if_db_fail, 'w', encoding='utf-8') as f:
                     json.dump(report_content, f, ensure_ascii=False, indent=4, default=str)
-                print(f"\n📄 검증 결과가 '{output_report_path_if_db_fail}' 파일에 저장되었습니다.")
+                logger.info(f"\n📄 검증 결과가 '{output_report_path_if_db_fail}' 파일에 저장되었습니다.")
             except Exception as e_file_save:
-                print(f"\n⚠️ DB 저장 실패 후 파일 저장 중에도 오류 발생: {e_file_save}")
+                logger.info(f"\n⚠️ DB 저장 실패 후 파일 저장 중에도 오류 발생: {e_file_save}")
 
         return all_errors, rule_execution_summary

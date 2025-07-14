@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>신한카드 데이터 품질관리 시스템 개선안 (통합본)</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f0f2f5; }
+        .page-container { display: flex; margin: 20px auto; max-width: 2100px; }
+        .slide-wrapper { flex: 0 0 1280px; }
+        .slide { width: 1280px; min-height: 720px; position: relative; background: white; color: #333; border: 1px solid #ddd; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .description-wrapper { flex: 1; padding: 20px; background-color: #f8f9fa; border-left: 1px solid #e0e0e0; overflow-y: auto; min-width: 500px; }
+        .description-content { min-height: 720px; background-color: white; padding: 24px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .description-content h2 { font-size: 1.5rem; font-weight: 700; color: #000C6E; padding-bottom: 12px; border-bottom: 2px solid #00A9CE; margin-bottom: 20px; }
+        .description-content h3 { font-size: 1.1rem; font-weight: 600; color: #333; margin-top: 24px; margin-bottom: 12px; }
+        .description-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        .description-table th, .description-table td { border: 1px solid #e2e8f0; padding: 10px; text-align: left; vertical-align: top; }
+        .description-table th { background-color: #f7fafc; font-weight: 500; width: 30%; }
+        .header-bar { background: linear-gradient(90deg, #000C6E 0%, #001A8D 100%); height: 80px; }
+        .shinhan-blue { color: #000C6E; }
+        .shinhan-accent { color: #00A9CE; }
+        .data-table th { background-color: #f3f4f6; font-weight: 500; text-align: left; padding: 10px; }
+        .data-table td { padding: 10px; border-bottom: 1px solid #e5e7eb; }
+        .tab-menu { border-bottom: 1px solid #e5e7eb; }
+        .tab-item { padding: 12px 24px; font-weight: 500; color: #6b7280; cursor: pointer; border-bottom: 2px solid transparent; }
+        .tab-active { color: #00A9CE; border-bottom: 2px solid #00A9CE; }
+        .panel { background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background-color: #000C6E; color: white; }
+        .btn-primary:hover { background-color: #001A8D; }
+        .btn-secondary { background-color: #e5e7eb; color: #4b5563; }
+        .btn-secondary:hover { background-color: #d1d5db; }
+    </style>
+</head>
+<body>
+
+
+
+
+<!--1페이지-->
+<div class="page-container">
+    <div class="slide-wrapper">
+        <div class="slide">
+            <div class="header-bar flex items-center justify-between px-12"><h1 class="text-white text-2xl font-medium">검증 관련 화면 흐름도</h1></div>
+            <div class="p-10 flex flex-col items-center justify-center h-full">
+
+                <div class="space-y-4 w-full max-w-5xl">
+                    <div class="flow-box bg-blue-50 border-blue-200">
+                        <i class="fas fa-tachometer-alt text-2xl text-blue-600"></i>
+                        <div>
+                            <h4 class="font-bold">1. 검증 과제 대시보드</h4>
+                            <p class="text-sm text-gray-600">전체 '검증 과제'의 현황을 모니터링하고, 문제가 발생한 과제를 인지합니다.</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-center"><i class="fas fa-arrow-down text-2xl text-gray-400"></i></div>
+
+                    <div class="flow-box bg-blue-50 border-blue-200">
+                        <i class="fas fa-book-open text-2xl text-blue-600"></i>
+                        <div>
+                            <h4 class="font-bold">2. 검증 과제 상세</h4>
+                            <p class="text-sm text-gray-600">특정 과제의 과거 실행 이력과 조치 현황을 전체적으로 파악합니다.</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-center"><i class="fas fa-arrow-down text-2xl text-gray-400"></i></div>
+
+                    <div class="flow-box bg-blue-50 border-blue-200">
+                        <i class="fas fa-file-alt text-2xl text-blue-600"></i>
+                        <div>
+                            <h4 class="font-bold">3. 검증 실행 상세</h4>
+                            <p class="text-sm text-gray-600">특정 실행 건의 상세 결과(실패 규칙, 오류 내역 등)를 분석하고 조치를 시작합니다.</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-center"><i class="fas fa-arrow-down text-2xl text-gray-400"></i></div>
+
+                    <div class="relative p-6 border-2 border-dashed border-gray-300 rounded-lg">
+                        <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-white px-2 font-semibold text-gray-500">조치 분기</div>
+                        <div class="grid grid-cols-2 gap-6">
+                            <div class="flow-box bg-green-50 border-green-200">
+                                <i class="fas fa-check-circle text-2xl text-green-600"></i>
+                                <div>
+                                    <h4 class="font-bold">4-A. 1회성 조치 등록</h4>
+                                    <p class="text-sm text-gray-600">단순 오류 수정, 오탐 처리 등 즉시 종결 가능한 건을 처리합니다.</p>
+                                </div>
+                            </div>
+                            <div class="flow-box bg-yellow-50 border-yellow-300">
+                                <i class="fas fa-link text-2xl text-yellow-600"></i>
+                                <div>
+                                    <h4 class="font-bold">4-B. 사후관리 등록/연결</h4>
+                                    <p class="text-sm text-gray-600">근본 원인 분석이 필요한 이슈를 '사후관리' 건으로 생성하거나 기존 건에 연결합니다.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="description-wrapper">
+        <div class="description-content">
+            <h2>화면 설명: 검증 관련 화면 흐름도</h2>
+            <p class="mb-4 text-gray-600">시스템의 핵심 화면들과 각 화면 간의 관계, 그리고 사용자의 일반적인 작업 흐름을 시각적으로 표현한 다이어그램입니다.</p>
+            <h3>흐름 설명</h3>
+            <ol class="list-decimal list-inside space-y-2 text-gray-700">
+                <li>사용자는 <strong>'검증 과제 대시보드'</strong>에서 전체 현황을 파악합니다.</li>
+                <li>문제가 있는 과제의 <strong>'과제 상세'</strong>로 이동하여 과거 이력을 확인합니다.</li>
+                <li>특정 <strong>'실행 상세'</strong>로 이동하여 오류의 세부 내용을 분석합니다.</li>
+                <li>분석 후, 문제의 성격에 따라 **'1회성 조치'**로 빠르게 종결하거나, 근본 원인 해결을 위해 **'사후관리'** 프로세스로 전환합니다.</li>
+            </ol>
+        </div>
+    </div>
+</div>
+
+<style>
+.flow-box {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem; /* 24px */
+    padding: 1.5rem; /* 24px */
+    border-width: 1px;
+    border-radius: 0.5rem; /* 8px */
+}
+</style>
+
+<!--신규 검증대쉬보드-->
+<div class="page-container">
+    <div class="slide-wrapper">
+        <div class="slide">
+            <div class="header-bar flex items-center justify-between px-12"><h1 class="text-white text-2xl font-medium">검증 과제 대시보드</h1></div>
+            <div class="p-8">
+                <div class="mb-6 p-3 border rounded-lg bg-gray-50 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                         <div class="flex items-center space-x-2 text-sm"><label class="flex items-center font-medium"><input type="radio" name="taskView" class="mr-1" checked><span>내 담당</span></label><label class="flex items-center"><input type="radio" name="taskView" class="mr-1"><span>전체</span></label></div>
+                        <select class="p-2 border rounded-md text-sm"><option>최근 상태: 전체</option></select>
+                        <input type="text" placeholder="과제명, 대상 데이터, 담당팀 검색" class="p-2 border rounded-md text-sm w-80">
+                    </div>
+                    <div class="flex items-center space-x-2"><button class="btn btn-secondary"><i class="fas fa-undo mr-1"></i>초기화</button><button class="btn btn-primary"><i class="fas fa-search mr-1"></i>조회</button></div>
+                </div>
+
+                <div class="mb-8">
+                    <h3 class="text-lg font-medium mb-3 shinhan-blue"><i class="fas fa-chart-pie mr-2"></i>전체 과제 요약</h3>
+                    <div class="grid grid-cols-4 gap-4 text-center">
+                        <div class="p-4 border rounded-lg"><div class="text-sm text-gray-500">전체 과제 수</div><div class="text-2xl font-bold shinhan-blue">15 개</div></div>
+                        <div class="p-4 border rounded-lg"><div class="text-sm text-gray-500">정상 과제</div><div class="text-2xl font-bold text-green-600">12 개</div></div>
+                        <div class="p-4 border rounded-lg"><div class="text-sm text-gray-500">최근 실패 과제</div><div class="text-2xl font-bold text-red-600">3 개</div></div>
+                        <div class="p-4 border rounded-lg"><div class="text-sm text-gray-500">사후관리 진행</div><div class="text-2xl font-bold text-yellow-600">2 건</div></div>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex items-center p-4 bg-white border-l-4 border-red-500 rounded-lg shadow-sm">
+                        <div class="flex-grow px-4">
+                            <div class="flex items-center mb-2"><p class="font-bold text-lg text-gray-800">월별 온라인 매출 검증</p><span class="ml-2 px-2 py-0.5 text-xs font-semibold bg-gray-200 text-gray-700 rounded-full">Monthly</span></div>
+                            <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-gray-600">
+                                <div><strong>대상 데이터:</strong> mdb.bmalsa0037</div><div><strong>담당자:</strong> 김신한 (데이터분석팀)</div>
+                                <div><strong>관련 회사:</strong> 신한카드 본사</div><div><strong>최근 수정:</strong> 2025-07-12 09:00:00</div>
+                            </div>
+                        </div>
+                        <div class="w-48 text-sm text-center border-l border-r mx-4 px-4"><p class="font-semibold text-red-600">최근 실행: Failed</p><p class="mt-1 text-gray-500">2025-07-11 14:00:15</p></div>
+                        <div class="w-24 text-center"><button class="btn btn-secondary">이력 보기</button></div>
+                    </div>
+                     <div class="flex items-center p-4 bg-white border-l-4 border-green-500 rounded-lg shadow-sm">
+                        <div class="flex-grow px-4">
+                            <div class="flex items-center mb-2"><p class="font-bold text-lg text-gray-800">일별 고객 정보 정합성 검증</p><span class="ml-2 px-2 py-0.5 text-xs font-semibold bg-gray-200 text-gray-700 rounded-full">Daily</span></div>
+                           <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-gray-600">
+                                <div><strong>대상 데이터:</strong> crdmgmt.customer_info</div><div><strong>담당자:</strong> 박정보 (IT운영팀)</div>
+                                <div><strong>관련 회사:</strong> 신한DS</div><div><strong>최근 수정:</strong> 2025-06-30 17:00:00</div>
+                            </div>
+                        </div>
+                        <div class="w-48 text-sm text-center border-l border-r mx-4 px-4"><p class="font-semibold text-green-600">최근 실행: Passed</p><p class="mt-1 text-gray-500">2025-07-12 13:02:40</p></div>
+                        <div class="w-24 text-center"><button class="btn btn-secondary">이력 보기</button></div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center mt-4 text-sm">
+                    <div class="flex items-center space-x-2">
+                        <select class="p-2 border rounded-md text-sm"><option selected>10개씩 보기</option><option>20개씩 보기</option></select>
+                        <span class="text-gray-700">총 15개 항목 중 1-10 표시</span>
+                    </div>
+                    <div class="flex items-center space-x-1">
+                        <button class="btn btn-secondary p-2 h-8 w-8">&laquo;</button>
+                        <button class="btn btn-secondary p-2 h-8 w-8">&lsaquo;</button>
+                        <span class="px-2">페이지 <input type="number" value="1" class="w-12 text-center border rounded"> / 2</span>
+                        <button class="btn btn-secondary p-2 h-8 w-8">&rsaquo;</button>
+                        <button class="btn btn-secondary p-2 h-8 w-8">&raquo;</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="description-wrapper">
+        <div class="description-content">
+            <h2>화면 설명: 검증 과제 대시보드</h2>
+            <p>'검증 과제' 단위로 데이터 품질 현황을 관리하는 메인 대시보드입니다.</p>
+            <h3>주요 구성 요소</h3>
+            <table class="description-table">
+                <thead><tr><th>UI 요소</th><th>기능 설명</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>과제 요약</strong></td><td>필터 조건에 맞는 전체 과제에 대한 요약 정보를 카드 형태로 보여줍니다. `정상 과제`는 최근 실행이 '성공'인 과제의 수, `사후관리 진행`은 현재 '진행중' 상태인 사후관리 건의 수를 의미합니다.</td></tr>
+                    <tr><td><strong>검증 과제 목록 (카드형)</strong></td>
+                        <td>
+                            필터 조건에 맞는 '검증 과제'들을 카드 형태로 목록 표시합니다. 각 카드는 과제의 핵심 정보와 가장 최근의 실행 상태를 요약하여 보여줍니다.
+                        </td>
+                    </tr>
+                    <tr><td><strong>[이력 보기] 버튼</strong></td><td>클릭 시, 해당 과제의 과거 실행 이력을 모두 볼 수 있는 '검증 과제 상세' 화면으로 이동합니다.</td></tr>
+                    <tr><td><strong>페이징 컨트롤</strong></td><td>과제 목록이 길어질 경우, 페이지를 나누어 탐색할 수 있는 기능을 제공합니다.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!--검증 과제 상세-->
+<div class="page-container">
+    <div class="slide-wrapper">
+        <div class="slide">
+            <div class="header-bar flex items-center justify-between px-12"><h1 class="text-white text-2xl font-medium">'월별 온라인 매출 검증' 과제 상세</h1></div>
+            <div class="p-8">
+                <div class="max-w-6xl mx-auto space-y-8">
+                    <div class="grid grid-cols-2 gap-8">
+                        <div class="panel p-6">
+                            <h3 class="text-lg font-medium mb-4 shinhan-blue"><i class="fas fa-book mr-2"></i>과제 기본 정보</h3>
+                            <div class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                                <div><strong>과제 ID:</strong> TASK-001</div>
+                                <div><strong>담당팀:</strong> 데이터분석팀</div>
+                                <div><strong>대상 데이터:</strong> mdb.bmalsa0037</div>
+                                <div><strong>스케줄:</strong> 매월 10일 14:00</div>
+                                <div class="col-span-2"><strong>Git 스크립트:</strong> <a href="#" class="text-blue-600 hover:underline">rules/monthly_sales.py</a></div>
+                            </div>
+                        </div>
+                        <div class="panel flex flex-col">
+                            <h3 class="text-lg font-medium p-4 border-b shinhan-blue"><i class="fas fa-comments mr-2"></i>업무 이력 및 코멘트</h3>
+                            <div class="flex-grow p-4 space-y-3 text-sm overflow-y-auto max-h-48">
+                                <div class="text-gray-500 text-xs"><i class="fas fa-flag mr-1 text-red-500"></i><strong>시스템</strong> 5월 검증 실패 등록</div>
+                                <div><div class="font-semibold">김신한 <span class="text-xs text-gray-400">2025-05-09</span></div><div class="p-2 mt-1 rounded-md">스키마 변경으로 인한 일시적 오류.</div></div>
+                                 <div class="text-gray-500 text-xs"><i class="fas fa-flag mr-1 text-red-500"></i><strong>시스템</strong> 7월 검증 실패 등록</div>
+                                 <div><div class="font-semibold">김신한 <span class="text-xs text-gray-400">2025-07-11</span></div><div class="p-2 mt-1 rounded-md">5월과 다른 유형의 오류 발생. 원인 분석 착수.</div></div>
+                            </div>
+                            <div class="p-3 border-t"><textarea class="w-full p-2 border rounded-md text-sm" rows="1" placeholder="코멘트 입력..."></textarea></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg font-medium mb-3 shinhan-blue"><i class="fas fa-history mr-2"></i>과거 실행 이력 (Validation Runs)</h3>
+                         <div class="overflow-x-auto rounded-lg border">
+                            <table class="data-table w-full text-sm">
+                                <thead class="text-xs"><tr><th>실행일시</th><th>상태</th><th>실패 규칙 수</th><th>총 오류 수</th><th>조치 상태</th><th class="w-1/3">조치 내용 요약</th><th>상세</th></tr></thead>
+                                <tbody>
+                                    <tr>
+                                        <td>2025-07-11 14:00:15</td>
+                                        <td><span class="px-2 py-1 rounded-full font-medium bg-red-100 text-red-800">Failed</span></td>
+                                        <td>12</td><td>258</td>
+                                        <td><span class="px-2 py-1 rounded-full font-medium bg-yellow-100 text-yellow-800">분석중</span></td>
+                                        <td>현업부서 확인요청 (사후관리 진행중)</td>
+                                        <td><button class="btn btn-secondary">보기</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td>2025-06-10 14:01:05</td>
+                                        <td><span class="px-2 py-1 rounded-full font-medium bg-green-100 text-green-800">Passed</span></td>
+                                        <td>0</td><td>0</td><td>-</td>
+                                        <td class="text-gray-400">-</td>
+                                        <td><button class="btn btn-secondary">보기</button></td>
+                                    </tr>
+                                    <tr>
+                                        <td>2025-05-09 14:00:50</td>
+                                        <td><span class="px-2 py-1 rounded-full font-medium bg-red-100 text-red-800">Failed</span></td>
+                                        <td>1</td><td>1</td>
+                                        <td><span class="px-2 py-1 rounded-full font-medium bg-blue-100 text-blue-800">조치완료</span></td>
+                                        <td>1회성 오탐 등록</td>
+                                        <td><button class="btn btn-secondary">보기</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                         <div class="flex justify-end items-center mt-4 text-sm"><div class="flex items-center space-x-1"><button class="btn btn-secondary p-2 h-8 w-8" disabled>&laquo;</button><span class="px-2">페이지 1 / 1</span><button class="btn btn-secondary p-2 h-8 w-8" disabled>&raquo;</button></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="description-wrapper">
+        <div class="description-content">
+            <h2>화면 설명: 검증 과제 상세</h2>
+            <p>특정 '검증 과제'의 상세 정보와 과거 실행 이력을 보여주는 화면입니다.</p>
+             <h3>주요 구성 요소</h3>
+            <table class="description-table">
+                <thead><tr><th>UI 요소</th><th>기능 설명</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>과제 기본 정보</strong></td><td>이 과제의 고유 정보(담당팀, Git 스크립트 위치, 실행 스케줄 등)를 표시하여 과제의 전체적인 맥락을 파악하게 합니다.</td></tr>
+                    <tr><td><strong>업무 이력 및 코멘트</strong></td><td>이 과제에 대한 모든 커뮤니케이션 이력을 시간순으로 통합하여 보여주고, 새로운 코멘트를 등록할 수 있습니다.</td></tr>
+                    <tr><td><strong>과거 실행 이력</strong></td>
+                        <td>
+                            해당 과제가 과거부터 실행된 모든 결과(Run)를 시간순으로 나열합니다. `조치 상태`와 `조치 내용 요약` 컬럼을 통해 과거 실패 건에 대한 대응 이력을 빠르게 파악할 수 있습니다.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!--검증 상세 기본정보-->
+<div class="page-container">
+    <div class="slide-wrapper">
+        <div class="slide">
+            <div class="header-bar flex items-center justify-between px-12"><h1 class="text-white text-2xl font-medium">검증 실행 상세</h1></div>
+            <div class="flex bg-white px-12 tab-menu border-b"><div class="tab-item tab-active"><i class="fas fa-info-circle mr-2"></i>기본정보</div><div class="tab-item"><i class="fas fa-list-check mr-2"></i>검증 결과</div><div class="tab-item"><i class="fas fa-robot mr-2"></i>AI 분석</div></div>
+            <div class="p-8">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold shinhan-blue">월별 온라인 매출 검증 <span class="text-lg text-gray-500 font-medium">(2025-07-11 14:00:15)</span></h2>
+                    <div class="text-sm mt-2"><span class="font-semibold text-gray-600">실행ID:</span> <span class="text-gray-700">vr_20250711_1400_bmalsa0037</span></div>
+                </div>
+                <div class="space-y-8">
+                    <div class="grid grid-cols-2 gap-8">
+                        <div class="panel p-6">
+                            <h3 class="text-lg font-medium mb-4 shinhan-blue"><i class="fas fa-file-invoice mr-2"></i>검증 실행 요약</h3>
+                            <div class="text-sm space-y-3">
+                                <div><strong>대상 데이터:</strong> mdb.bmalsa0037</div>
+                                <div><strong>데이터 기준일자:</strong> 202411</div>
+                                <div><strong>전체 상태:</strong> <span class="px-2 py-1 rounded-full font-medium bg-red-100 text-red-800">Failed</span></div>
+                            </div>
+                        </div>
+                        <div class="panel p-6">
+                            <h3 class="text-lg font-medium mb-4 shinhan-blue"><i class="fas fa-chart-pie mr-2"></i>결과 요약</h3>
+                            <div class="text-sm space-y-3">
+                                <div><strong>실행/실패 규칙:</strong> 30 개 / <span class="font-bold text-red-600">12 개</span></div>
+                                <div><strong>실패 규칙 (등급별):</strong> C: 5, M: 4, m: 3</div>
+                                <div><strong>총 오류 건수:</strong> 258 건</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                         <h3 class="text-lg font-medium mb-3 shinhan-blue"><i class="fas fa-flag mr-2"></i>실패한 규칙 목록</h3>
+                         <div class="overflow-hidden rounded-lg border">
+                            <div class="max-h-60 overflow-y-auto">
+                                <table class="data-table w-full text-sm">
+                                    <thead class="text-xs sticky top-0 bg-gray-50 z-10"><tr><th>규칙명</th><th>중요도</th><th>오류 건수</th></tr></thead>
+                                    <tbody>
+                                        <tr><td>해외국가별_온라인매출_전월대비_추이</td><td><span class="text-yellow-500 font-bold">Major</span></td><td>100</td></tr>
+                                        <tr><td>시간대값_허용값</td><td><span class="text-red-500 font-bold">Critical</span></td><td>5</td></tr>
+                                        <tr><td>고객유형(국가명)_필수값</td><td><span class="text-red-500 font-bold">Critical</span></td><td>12</td></tr>
+                                        <tr><td>추정매출금액_범위(0이상)</td><td><span class="text-yellow-500 font-bold">Major</span></td><td>88</td></tr>
+                                        <tr><td>기준년월_형식(YYYYMM)</td><td><span class="text-gray-500 font-bold">Minor</span></td><td>1</td></tr>
+                                        <tr><td>스키마_자동_변경_감지</td><td><span class="text-red-500 font-bold">Critical</span></td><td>1</td></tr>
+                                        <tr><td>월별_총온라인매출_전년동월대비_추이</td><td><span class="text-red-500 font-bold">Critical</span></td><td>1</td></tr>
+                                        <tr><td>시간대별_온라인매출_전년동월대비_추이</td><td><span class="text-yellow-500 font-bold">Major</span></td><td>4</td></tr>
+                                        <tr><td>가맹점ID_필수값</td><td><span class="text-red-500 font-bold">Critical</span></td><td>25</td></tr>
+                                        <tr><td>업종코드_유효성</td><td><span class="text-yellow-500 font-bold">Major</span></td><td>15</td></tr>
+                                        <tr><td>결제통화_허용값</td><td><span class="text-gray-500 font-bold">Minor</span></td><td>3</td></tr>
+                                        <tr><td>데이터중복_검증</td><td><span class="text-red-500 font-bold">Critical</span></td><td>2</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                         </div>
+                    </div>
+                </div>
+                <div class="mt-8 flex justify-end space-x-3"><button class="btn btn-secondary"><i class="fas fa-arrow-left mr-2"></i>과제 이력으로</button><button class="btn btn-primary"><i class="fas fa-edit mr-2"></i>조치하기</button></div>
+            </div>
+        </div>
+    </div>
+    <div class="description-wrapper">
+        <div class="description-content">
+            <h2>화면 설명: 검증 실행 상세 (조치 전)</h2>
+            <p>특정 '검증 실행(Run)'의 상세 분석을 위한 메인 화면입니다. 사용자는 이 화면에서 실패 요약을 확인하고, 다른 상세 탭으로 이동하거나 조치를 등록할 수 있습니다.</p>
+            <h3>주요 구성 요소</h3>
+            <table class="description-table">
+                <thead><tr><th>UI 요소</th><th>기능 설명</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>페이지 타이틀</strong></td><td>사용자가 분석 중인 '검증 이름'과 '실행 시간'을 명확히 인지할 수 있도록 헤더 정보를 표시합니다.</td></tr>
+                    <tr><td><strong>검증 실행 요약</strong></td><td>해당 실행 건의 핵심 메타데이터를 표시합니다. `전체 상태` 필드에는 `Passed`, `Failed` 등의 값이 표시됩니다.</td></tr>
+                    <tr><td><strong>결과 요약</strong></td><td>해당 실행의 전체 규칙 수 대비 실패한 규칙 수와, 등급(Critical, Major, minor)별 실패 규칙 수를 보여주어 문제의 심각성을 직관적으로 파악하게 합니다.</td></tr>
+                    <tr><td><strong>실패한 규칙 목록</strong></td><td>해당 실행에서 실패(Failed)한 모든 규칙의 목록과 각 규칙별 오류 건수 및 중요도를 표시합니다. 목록이 길 경우, 테이블 내부에 스크롤이 생성됩니다.</td></tr>
+                    <tr><td><strong>[조치하기] 버튼</strong></td><td>이 검증 실행 건 전체에 대한 조치 내용을 기록하기 위해 '조치 결과 등록' 화면으로 이동시킵니다.</td></tr>
+                    <tr><td><strong>[과제 이력으로] 버튼</strong></td><td>상위 화면인 '검증 과제 상세' 화면으로 돌아가, 해당 과제의 전체 실행 이력을 다시 확인합니다.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!--검증 상세 기본정보 (조치후)-->
+<div class="page-container">
+    <div class="slide-wrapper">
+        <div class="slide">
+            <div class="header-bar flex items-center justify-between px-12"><h1 class="text-white text-2xl font-medium">검증 실행 상세 (조치후)</h1></div>
+            <div class="flex bg-white px-12 tab-menu border-b"><div class="tab-item tab-active"><i class="fas fa-info-circle mr-2"></i>기본정보</div><div class="tab-item"><i class="fas fa-list-check mr-2"></i>검증 결과</div><div class="tab-item"><i class="fas fa-robot mr-2"></i>AI 분석</div></div>
+            <div class="p-8">
+                 <div class="mb-6"><h2 class="text-2xl font-bold shinhan-blue">월별 온라인 매출 검증 <span class="text-lg text-gray-500 font-medium">(2025-07-11 14:00:15)</span></h2><p class="text-sm text-gray-400 mt-1">ID: vr_20250711_1400_bmalsa0037</p></div>
+                <div class="space-y-8">
+                    <div class="panel p-6 bg-blue-50 border-blue-200">
+                        <h3 class="text-lg font-medium mb-4 text-blue-800"><i class="fas fa-check-square mr-2"></i>등록된 조치 내역</h3>
+                        <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                            <div><strong>조치 유형:</strong> 현업부서 확인요청</div>
+                            <div><strong>조치 담당자:</strong> 김신한</div>
+                            <div class="col-span-2"><strong>조치 내용:</strong> 환율 변동에 의한 영향으로 잠정 결론. 상세 분석을 위해 글로벌사업팀에 분석 요청 완료.</div>
+                             <div class="col-span-2"><strong>사후관리 여부:</strong> 대상 (유형: 모니터링)</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-8">
+                        <div class="panel p-6">
+                            <h3 class="text-lg font-medium mb-4 shinhan-blue"><i class="fas fa-file-invoice mr-2"></i>검증 실행 요약</h3>
+                            <div class="text-sm space-y-3">
+                                <div><strong>대상 데이터:</strong> mdb.bmalsa0037</div>
+                                <div><strong>데이터 기준일자:</strong> 202411</div>
+                                <div><strong>전체 상태:</strong> <span class="px-2 py-1 rounded-full font-medium bg-yellow-100 text-yellow-800">분석중</span></div>
+                            </div>
+                        </div>
+                        <div class="panel p-6">
+                            <h3 class="text-lg font-medium mb-4 shinhan-blue"><i class="fas fa-chart-pie mr-2"></i>결과 요약</h3>
+                            <div class="text-sm space-y-3">
+                                <div><strong>실행/실패 규칙:</strong> 30 개 / <span class="font-bold text-red-600">12 개</span></div>
+                                <div><strong>실패 규칙 (등급별):</strong> C: 5, M: 4, m: 3</div>
+                                <div><strong>총 오류 건수:</strong> 258 건</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                         <h3 class="text-lg font-medium mb-3 shinhan-blue"><i class="fas fa-flag mr-2"></i>실패한 규칙 목록</h3>
+                         <div class="overflow-hidden rounded-lg border"><div class="max-h-60 overflow-y-auto"><table class="data-table w-full text-sm">
+                            <thead class="text-xs sticky top-0 bg-gray-50 z-10"><tr><th>규칙명</th><th>중요도</th><th>오류 건수</th></tr></thead>
+                            <tbody>
+                                <tr><td>해외국가별_온라인매출_전월대비_추이</td><td><span class="text-yellow-500 font-bold">Major</span></td><td>100</td></tr>
+                                <tr><td>시간대값_허용값</td><td><span class="text-red-500 font-bold">Critical</span></td><td>5</td></tr>
+                                <tr><td>고객유형(국가명)_필수값</td><td><span class="text-red-500 font-bold">Critical</span></td><td>12</td></tr>
+                                <tr><td>추정매출금액_범위(0이상)</td><td><span class="text-yellow-500 font-bold">Major</span></td><td>88</td></tr>
+                                <tr><td>기준년월_형식(YYYYMM)</td><td><span class="text-gray-500 font-bold">Minor</span></td><td>1</td></tr>
+                                <tr><td>스키마_자동_변경_감지</td><td><span class="text-red-500 font-bold">Critical</span></td><td>1</td></tr>
+                                <tr><td>월별_총온라인매출_전년동월대비_추이</td><td><span class="text-red-500 font-bold">Critical</span></td><td>1</td></tr>
+                                <tr><td>시간대별_온라인매출_전년동월대비_추이</td><td><span class="text-yellow-500 font-bold">Major</span></td><td>4</td></tr>
+                                <tr><td>가맹점ID_필수값</td><td><span class="text-red-500 font-bold">Critical</span></td><td>25</td></tr>
+                                <tr><td>업종코드_유효성</td><td><span class="text-yellow-500 font-bold">Major</span></td><td>15</td></tr>
+                                <tr><td>결제통화_허용값</td><td><span class="text-gray-500 font-bold">Minor</span></td><td>3</td></tr>
+                                <tr><td>데이터중복_검증</td><td><span class="text-red-500 font-bold">Critical</span></td><td>2</td></tr>
+                            </tbody>
+                         </table></div></div>
+                    </div>
+                </div>
+                <div class="mt-8 flex justify-end space-x-3"><button class="btn btn-secondary"><i class="fas fa-arrow-left mr-2"></i>과제 이력으로</button></div>
+            </div>
+        </div>
+    </div>
+    <div class="description-wrapper">
+        <div class="description-content">
+            <h2>화면 설명: 검증 실행 상세 (조치 후)</h2>
+            <p>조치가 등록된 '검증 실행(Run)'의 상세 내용을 보여주는 화면입니다.</p>
+            <h3>주요 구성 요소</h3>
+            <table class="description-table">
+                <thead><tr><th>UI 요소</th><th>기능 설명</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>등록된 조치 내역</strong></td><td>조치가 완료된 건의 경우, 화면 상단에 어떤 조치가 이루어졌는지 요약 정보를 우선적으로 표시합니다.</td></tr>
+                    <tr><td><strong>검증 실행/결과 요약</strong></td><td>조치된 건이라도 원본 검증의 요약 정보를 확인할 수 있도록 기존 섹션이 그대로 표시됩니다. `전체 상태` 필드에는 조치 후의 상태(예: `분석중`)가 반영됩니다.</td></tr>
+                    <tr><td><strong>실패한 규칙 목록</strong></td><td>이 실행 건에서 실패했던 규칙들의 목록을 다시 확인할 수 있습니다.</td></tr>
+                    <tr><td><strong>[과제 이력으로] 버튼</strong></td><td>상위 화면인 '검증 과제 상세'의 이력 목록으로 돌아갑니다.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!--검증 상세 결과-->
+<div class="page-container">
+    <div class="slide-wrapper">
+        <div class="slide">
+            <div class="header-bar flex items-center justify-between px-12"><h1 class="text-white text-2xl font-medium">검증 실행 상세 - 검증 결과</h1></div>
+            <div class="flex bg-white px-12 tab-menu border-b"><div class="tab-item"><i class="fas fa-info-circle mr-2"></i>기본정보</div><div class="tab-item tab-active"><i class="fas fa-list-check mr-2"></i>검증 결과</div><div class="tab-item"><i class="fas fa-robot mr-2"></i>AI 분석</div></div>
+            <div class="p-8">
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="flex items-center">
+                             <h2 class="text-lg font-medium shinhan-blue flex items-center"><i class="fas fa-tasks mr-2"></i>규칙 실행 결과</h2>
+                             <div class="ml-4 text-sm">
+                                <button class="px-3 py-1 rounded-md bg-red-100 text-red-700 font-semibold">실패 (12)</button>
+                                <button class="px-3 py-1 rounded-md text-gray-500">전체 (30)</button>
+                             </div>
+                        </div>
+                        <button class="btn btn-primary"><i class="fas fa-file-excel mr-2"></i>전체 오류 다운로드</button>
+                    </div>
+                    <div class="overflow-hidden rounded-lg border"><div class="max-h-60 overflow-y-auto"><table class="data-table w-full text-sm">
+                        <thead class="text-xs sticky top-0 bg-gray-50 z-10"><tr><th>규칙명</th><th>중요도</th><th>오류 건수</th></tr></thead>
+                        <tbody>
+                            <tr class="cursor-pointer bg-red-50 font-bold"><td>해외국가별_온라인매출_전월대비_추이</td><td><span class="text-yellow-500 font-bold">Major</span></td><td>100</td></tr>
+                            <tr class="cursor-pointer hover:bg-gray-50"><td>시간대값_허용값</td><td><span class="text-red-500 font-bold">Critical</span></td><td>5</td></tr>
+                            <tr class="cursor-pointer hover:bg-gray-50"><td>고객유형(국가명)_필수값</td><td><span class="text-red-500 font-bold">Critical</span></td><td>12</td></tr>
+                            <tr class="cursor-pointer hover:bg-gray-50"><td>추정매출금액_범위(0이상)</td><td><span class="text-yellow-500 font-bold">Major</span></td><td>88</td></tr>
+                            <tr class="cursor-pointer hover:bg-gray-50"><td>기준년월_형식(YYYYMM)</td><td><span class="text-gray-500 font-bold">Minor</span></td><td>1</td></tr>
+                            <tr class="cursor-pointer hover:bg-gray-50"><td>스키마_자동_변경_감지</td><td><span class="text-red-500 font-bold">Critical</span></td><td>1</td></tr>
+                            <tr class="cursor-pointer hover:bg-gray-50"><td>월별_총온라인매출_전년동월대비_추이</td><td><span class="text-red-500 font-bold">Critical</span></td><td>1</td></tr>
+                            <tr class="cursor-pointer hover:bg-gray-50"><td>시간대별_온라인매출_전년동월대비_추이</td><td><span class="text-yellow-500 font-bold">Major</span></td><td>4</td></tr>
+                            <tr class="cursor-pointer hover:bg-gray-50"><td>가맹점ID_필수값</td><td><span class="text-red-500 font-bold">Critical</span></td><td>25</td></tr>
+                            <tr class="cursor-pointer hover:bg-gray-50"><td>업종코드_유효성</td><td><span class="text-yellow-500 font-bold">Major</span></td><td>15</td></tr>
+                            <tr class="cursor-pointer hover:bg-gray-50"><td>결제통화_허용값</td><td><span class="text-gray-500 font-bold">Minor</span></td><td>3</td></tr>
+                            <tr class="cursor-pointer hover:bg-gray-50"><td>데이터중복_검증</td><td><span class="text-red-500 font-bold">Critical</span></td><td>2</td></tr>
+                        </tbody>
+                    </table></div></div>
+                </div>
+                <div>
+                    <div class="flex items-baseline mb-3"><h2 class="text-lg font-medium shinhan-blue"><i class="fas fa-bug mr-2"></i>상세 오류 내역 (규칙: 해외국가별_온라인매출_전월대비_추이)</h2><span class="ml-2 text-sm text-gray-500">(총 100건 중 최대 30건 표시)</span></div>
+                    <div class="overflow-hidden rounded-lg border"><div class="max-h-52 overflow-y-auto"><table class="data-table w-full text-sm">
+                        <thead class="text-xs sticky top-0 bg-gray-50 z-10"><tr><th>에러 ID</th><th>대상 데이터</th><th>룰 이름</th><th>대상 컬럼</th><th class="w-2/5">상세 메시지</th></tr></thead>
+                        <tbody>
+                            <tr><td>err_..._0</td><td>mdb.bmalsa0037</td><td>해외국가별_온라인매출_전월대비_추이</td><td>aso_saa</td><td>그룹 'USA'의 SUM(aso_saa)이 전월 대비 29.17% 감소하여 임계치(20.0%)를 초과했습니다.</td></tr>
+                            <tr><td>err_..._1</td><td>mdb.bmalsa0037</td><td>해외국가별_온라인매출_전월대비_추이</td><td>aso_saa</td><td>그룹 'Japan'의 SUM(aso_saa)이 전월 대비 25.00% 증가하여 임계치(20.0%)를 초과했습니다.</td></tr>
+                        </tbody>
+                    </table></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="description-wrapper">
+        <div class="description-content">
+            <h2>화면 설명: 검증 실행 상세 - 검증 결과</h2>
+            <p class="mb-4 text-gray-600">특정 검증 실행(Run)에서 실행된 모든 규칙의 결과와 상세 오류 내역을 분석하는 화면입니다.</p>
+            <h3>주요 구성 요소</h3>
+            <table class="description-table">
+                <thead><tr><th>UI 요소</th><th>기능 설명</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>규칙 실행 결과</strong></td><td>- **필터**: `실패` 필터가 기본으로 선택되어 있으며, `전체`를 선택하면 성공한 규칙을 포함한 모든 규칙 목록을 볼 수 있습니다.<br>- **목록**: 필터 조건에 맞는 규칙 목록을 보여줍니다. 실패한 규칙을 클릭하면 하단의 '상세 오류 내역'이 업데이트됩니다.</td></tr>
+                    <tr><td><strong>[전체 오류 다운로드] 버튼</strong></td><td>- 클릭 시, 현재 검증 실행에서 발생한 **모든 실패 규칙**의 **모든 상세 오류 데이터**를 Excel 파일로 생성하여 다운로드하는 기능이 실행되어야 합니다.</td></tr>
+                    <tr><td><strong>상세 오류 내역</strong></td><td>- 상단 목록에서 선택된 규칙에 해당하는 오류 데이터 목록을 테이블로 보여줍니다.<br>- 화면 성능을 위해 목록에는 **최대 30개의 오류만 표시**되며, 전체 오류는 상단의 다운로드 기능을 통해 확인합니다.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!--검증 AI분석 - 미생성-->
+<div class="page-container">
+    <div class="slide-wrapper">
+        <div class="slide">
+            <div class="header-bar flex items-center justify-between px-12"><h1 class="text-white text-2xl font-medium">검증 실행 상세 - AI 분석 (보고서 생성전)</h1></div>
+            <div class="flex bg-white px-12 tab-menu border-b">
+                <div class="tab-item"><i class="fas fa-info-circle mr-2"></i>기본정보</div>
+                <div class="tab-item"><i class="fas fa-list-check mr-2"></i>검증 결과</div>
+                <div class="tab-item tab-active"><i class="fas fa-robot mr-2"></i>AI 분석</div>
+            </div>
+            <div class="p-8 h-full flex flex-col items-center justify-center text-center">
+                <i class="fas fa-robot text-6xl text-gray-300 mb-6"></i>
+                <h2 class="text-2xl font-bold text-gray-700 mb-2">AI 분석 보고서가 아직 생성되지 않았습니다.</h2>
+                <p class="text-gray-500 mb-8">현재 검증 실행의 실패한 규칙들과 상세 오류 데이터를 기반으로<br>예상 원인, 조치 방안, 재발 방지 대책을 포함한 종합 보고서를 생성합니다.</p>
+                <button class="btn btn-primary btn-lg px-8 py-3 text-lg">
+                    <i class="fas fa-play-circle mr-2"></i>AI 분석 시작하기
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="description-wrapper">
+        <div class="description-content">
+            <h2>화면 설명 : AI 분석 (보고서 생성 전)</h2>
+            <p class="mb-4 text-gray-600">사용자가 처음 AI 분석 탭에 진입했을 때의 초기 화면입니다.</p>
+            <h3>주요 구성 요소</h3>
+            <table class="description-table">
+                <thead><tr><th>UI 요소</th><th>기능 설명</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td><strong>안내 메시지</strong></td>
+                        <td>AI 분석 보고서가 아직 없음을 알리고, 분석 시 어떤 정보가 제공되는지 간략히 설명합니다.</td>
+                    </tr>
+                    <tr>
+                        <td><strong>[AI 분석 시작하기] 버튼</strong></td>
+                        <td>클릭 시, 현재 '검증 실행 ID'를 파라미터로 AI 보고서 생성을 요청하는 API를 호출합니다. 생성이 완료되면 아래의 '보고서 노출' 화면으로 전환됩니다.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!--검증 AI분석 - 생성후-->
+<div class="page-container">
+    <div class="slide-wrapper">
+        <div class="slide">
+            <div class="header-bar flex items-center justify-between px-12"><h1 class="text-white text-2xl font-medium">검증 실행 상세 - AI 분석 (보고서 생성후)</h1></div>
+            <div class="flex bg-white px-12 tab-menu border-b"><div class="tab-item"><i class="fas fa-info-circle mr-2"></i>기본정보</div><div class="tab-item"><i class="fas fa-list-check mr-2"></i>검증 결과</div><div class="tab-item tab-active"><i class="fas fa-robot mr-2"></i>AI 분석</div></div>
+            <div class="p-8 flex space-x-6">
+                <div class="w-2/3 panel p-6">
+                    <div class="flex justify-between items-center mb-4"><h3 class="text-lg font-bold shinhan-blue"><i class="fas fa-file-alt mr-2"></i>📊 AI 분석 종합 보고서</h3><button class="btn btn-secondary text-xs"><i class="fas fa-sync-alt mr-1"></i>보고서 다시 생성</button></div>
+                    <div class="text-sm space-y-4 max-h-96 overflow-y-auto pr-3 text-gray-800 leading-relaxed">
+                        <div>
+                            <h4 class="font-bold text-base text-gray-900">🔍 검증 개요</h4>
+                            <ul class="list-disc list-inside ml-2 mt-1 text-gray-700">
+                                <li><strong>검증 대상:</strong> mdb.bmalsa0037 (해외 온라인 매출)</li>
+                                <li><strong>기준 기간:</strong> 2024년 12월</li>
+                                <li><strong>총 데이터:</strong> 24,417건 (오류 72건)</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-base text-gray-900">⚠️ 주요 문제점 요약</h4>
+                             <ul class="list-disc list-inside ml-2 mt-1 text-gray-700">
+                                <li><strong>🚨 Critical:</strong> KTO 가맹점 코드 급증 (+12.41%)</li>
+                                <li><strong>🔴 Major:</strong> 다수 국가 매출 -99% 급감 및 특정 국가/업종 +694% 이상 폭증</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-base text-gray-900">🎯 주요 인사이트 및 사실 확인(Fact Check)</h4>
+                            <div class="mt-2 pl-3 border-l-2 border-blue-200">
+                                <h5 class="font-semibold">1. 🎄 연말 결제 시스템 대규모 업데이트의 영향</h5>
+                                <p class="mt-1"><strong>[현상]</strong> A009001(온라인 쇼핑) 업종 매출이 대부분 국가에서 급감하고, C001010(신규 결제 서비스) 업종이 0원에서 급증했습니다.<br>
+                                <strong>[Fact Check]</strong> 2024년 12월 해외 온라인 결제 시스템 개편으로, 기존 A009001 코드 체계가 새로운 C001010으로 전환되었습니다.<br>
+                                <strong>[분석]</strong> 실제 매출 감소가 아닌, 시스템 마이그레이션으로 인한 업종 코드 재분류 현상으로 판단됩니다.</p>
+                            </div>
+                            <div class="mt-3 pl-3 border-l-2 border-blue-200">
+                                <h5 class="font-semibold">2. 🇨🇳 중국 시장 폭발적 성장: 위안화 약세와 한류 열풍</h5>
+                                <p class="mt-1"><strong>[현상]</strong> 중국에서만 유독 694%라는 극단적 매출 급증을 보였습니다.<br>
+                                <strong>[Fact Check]</strong> 2024년 12월 위안화 약세 및 K-콘텐츠 연계 상품 특수가 겹쳤습니다.<br>
+                                <strong>[분석]</strong> 환율 효과와 시즌 특수가 복합적으로 작용한 결과로, 소비 패턴의 변화를 시사합니다.</p>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-base text-gray-900">🎯 권장 조치사항</h4>
+                            <ul class="list-decimal list-inside ml-2 mt-1 text-gray-700">
+                                <li><strong>긴급 시스템 점검:</strong> A009001→C001010 업종 코드 전환 과정의 데이터 정합성 검증</li>
+                                <li><strong>중국 시장 집중 관리:</strong> 694% 급증 지속 가능성 분석 및 리스크 관리 체계 구축</li>
+                                <li><strong>서구 시장 회복 전략:</strong> 미국, 유럽 시장 매출 회복을 위한 마케팅 전략 수립</li>
+                            </ul>
+                        </div>
+                         <div>
+                            <h4 class="font-bold text-base text-gray-900">📈 종합 평가</h4>
+                            <p class="mt-1">시스템 업데이트와 글로벌 경제 환경 변화가 복합적으로 작용하여 대규모 데이터 변동이 발생했습니다. 기술적 이슈와 비즈니스 기회가 동시에 존재하는 상황으로, 체계적인 원인 분석과 대응 전략 수립이 시급합니다.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-1/3 flex flex-col">
+                    <h3 class="text-lg font-bold shinhan-blue mb-4"><i class="fas fa-comments mr-2"></i>AI에게 추가 질문하기</h3>
+                    <div class="flex-grow bg-gray-50 rounded-lg p-4 text-sm space-y-3 overflow-y-auto">
+                        <div class="p-3 bg-blue-100 rounded-lg">
+                            <p><strong>AI:</strong> 안녕하세요! 보고서에 대해 궁금한 점을 질문해주세요.</p>
+                        </div>
+                        <div class="p-3 bg-green-100 rounded-lg ml-auto w-11/12">
+                            <p class="text-right"><strong>사용자:</strong> 보고서에 KTO 업종 코드가 급증했다는데, 어떤 코드들이야?</p>
+                        </div>
+                         <div class="p-3 bg-blue-100 rounded-lg">
+                            <p><strong>AI:</strong> 네, 이번 달에 새로 탐지된 17개 KTO 업종 코드는 일부는 다음과 같습니다: <br><code class="text-xs">C001010, C001011, C001012 ...</code></p>
+                            <p class="mt-2">추가로, 이 업종들의 초기 거래 데이터에서 비정상 패턴이 없는지 분석해 드릴까요?</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex"><input type="text" placeholder="여기에 질문을 입력하세요..." class="flex-grow p-2 border rounded-l-md text-sm"><button class="btn btn-primary rounded-l-none">전송</button></div>
+                </div>
+            </div>
+        </div>
+    </div>
+     <div class="description-wrapper">
+        <div class="description-content">
+            <h2>화면 설명 : AI 분석 (보고서 생성 후)</h2>
+            <p class="mb-4 text-gray-600">AI 분석이 완료되어 생성된 종합 보고서를 보여주고, 사용자와 AI가 상호작용할 수 있는 화면입니다.</p>
+            <h3>주요 구성 요소</h3>
+            <table class="description-table">
+                <thead><tr><th>UI 요소</th><th>기능 설명</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>AI 분석 종합 보고서</strong></td><td>AI가 여러 오류를 종합적으로 분석하여 `검증 개요`, `주요 문제점`, `인사이트 및 Fact Check` 등을 포함한 구조화된 리포트를 제공합니다.</td></tr>
+                    <tr><td><strong>[보고서 다시 생성] 버튼</strong></td><td>현재 보고서를 삭제하고, AI 분석을 처음부터 다시 실행하고자 할 때 사용합니다.</td></tr>
+                    <tr><td><strong>AI에게 추가 질문하기 (프롬프트)</strong></td><td>사용자가 AI 보고서 내용에 대해 궁금한 점을 자연어로 질문할 수 있는 채팅 형태의 입력창입니다. `전송` 버튼을 누르면 AI의 답변이 채팅창에 추가됩니다.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!--조치결과등록 - 1회성조치 선택-->
+<div class="page-container">
+    <div class="slide-wrapper">
+        <div class="slide">
+            <div class="header-bar flex items-center justify-between px-12"><h1 class="text-white text-2xl font-medium">조치 결과 등록</h1></div>
+            <div class="p-8">
+                <div class="max-w-4xl mx-auto">
+                    <div class="mb-8"><h3 class="text-lg font-medium mb-3 shinhan-blue"><i class="fas fa-info-circle mr-2"></i>조치 대상 검증 정보</h3><div class="panel p-4 grid grid-cols-3 gap-x-6 gap-y-2 text-sm bg-gray-100"><div><strong>검증 실행 ID:</strong> vr_...37</div><div><strong>대상 데이터:</strong> mdb.bmalsa0037</div><div><strong>실패한 규칙:</strong> 12 개</div></div></div>
+                    <div>
+                        <h3 class="text-lg font-medium mb-3 shinhan-blue"><i class="fas fa-edit mr-2"></i>조치 결과 등록</h3>
+                        <div class="panel p-6">
+                            <div class="mb-6"><label class="text-sm font-medium">1. 조치 목적 선택</label><div class="mt-2 flex space-x-6 p-3 bg-gray-100 rounded-lg"><label class="flex items-center font-bold"><input type="radio" name="actionType" class="mr-2" checked><span>이번 실행 건에 대한 1회성 조치 등록</span></label><label class="flex items-center"><input type="radio" name="actionType" class="mr-2"><span>근본 원인 해결을 위한 '사후관리' 등록/연결</span></label></div></div>
+                            <div class="space-y-5">
+                                <label class="text-sm font-medium">2. 조치 내용 입력</label>
+                                <div class="grid grid-cols-6 items-center"><label class="col-span-1 text-sm font-medium">조치 유형</label><select class="col-span-2 p-2 border rounded-md text-sm"><option>선택</option><option>데이터 수정</option><option>일시적 오탐 등록</option><option>재실행으로 해결</option></select></div>
+                                <div class="grid grid-cols-6"><label class="col-span-1 text-sm font-medium mt-2">조치 내용 상세</label><textarea class="col-span-5 p-2 border rounded-md text-sm" rows="5" placeholder="수행한 조치 내용을 상세히 기술"></textarea></div>
+                                <div class="grid grid-cols-6 items-center"><label class="col-span-1 text-sm font-medium">첨부파일</label><div class="col-span-5"><input type="file" class="text-sm"></div></div>
+                                <div class="flex justify-end space-x-3 pt-4 border-t mt-6"><button class="btn btn-secondary">목록으로</button><button class="btn btn-primary">저장</button></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="description-wrapper">
+        <div class="description-content">
+            <h2>화면 설명: 조치 결과 등록 (1회성 조치)</h2>
+            <p class="mb-4 text-gray-600">단순 데이터 오류 수정, 일시적 오탐 등 즉시 해결하고 종결할 수 있는 조치를 등록하는 화면입니다.</p>
+            <h3>주요 구성 요소</h3>
+            <table class="description-table">
+                <thead><tr><th>UI 요소</th><th>기능 설명</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>조치 목적 선택</strong></td><td>- 사용자가 자신의 조치 목적을 '1회성 조치'와 '사후관리' 중 선택하는 라디오 버튼 그룹입니다.<br>- '1회성 조치'가 선택되면 현재와 같이 즉각적인 조치 내용을 입력하는 폼이 표시됩니다.</td></tr>
+                    <tr><td><strong>조치 유형</strong></td><td>- 수행한 조치의 종류를 선택하는 드롭다운입니다.<br>- **구성 요소**: `데이터 수정`, `일시적 오탐 등록`, `재실행으로 해결` 등의 옵션이 포함됩니다.</td></tr>
+                    <tr><td><strong>조치 내용 상세</strong></td><td>- 수행한 조치의 과정과 결과를 상세하게 기록하는 텍스트 입력 영역입니다.<br>- 담당자는 이 영역에 누가, 언제, 무엇을, 어떻게 조치했는지 다른 담당자가 파악할 수 있도록 구체적으로 작성해야 합니다.</td></tr>
+                    <tr><td><strong>첨부파일</strong></td><td>- 조치 내용을 증빙할 수 있는 파일(수정된 데이터 샘플, 관련 문서 등)을 업로드하는 기능입니다.</td></tr>
+                    <tr><td><strong>[저장] 버튼</strong></td><td>- 클릭 시, 입력된 모든 조치 내용을 저장하고 해당 검증 실행 건의 상태를 '조치완료'로 변경합니다.<br>- 저장이 완료되면 사용자는 이전 화면('검증 실행 상세')으로 돌아가며, 해당 화면에서는 '등록된 조치 내역'을 확인할 수 있게 됩니다.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!--조치결과등록 - 사후관리 선택-->
+<div class="page-container">
+    <div class="slide-wrapper">
+        <div class="slide">
+            <div class="header-bar flex items-center justify-between px-12"><h1 class="text-white text-2xl font-medium">조치 결과 등록</h1></div>
+             <div class="p-8">
+                <div class="max-w-4xl mx-auto">
+                    <div class="mb-8"><h3 class="text-lg font-medium mb-3 shinhan-blue"><i class="fas fa-info-circle mr-2"></i>조치 대상 검증 정보</h3><div class="panel p-4 grid grid-cols-3 gap-x-6 gap-y-2 text-sm bg-gray-100"><div><strong>검증 실행 ID:</strong> vr_...37</div><div><strong>대상 데이터:</strong> mdb.bmalsa0037</div><div><strong>실패한 규칙:</strong> 12 개</div></div></div>
+                    <div>
+                        <h3 class="text-lg font-medium mb-3 shinhan-blue"><i class="fas fa-edit mr-2"></i>조치 결과 등록</h3>
+                        <div class="panel p-6">
+                            <div class="mb-6"><label class="text-sm font-medium">1. 조치 목적 선택</label><div class="mt-2 flex space-x-6 p-3 bg-gray-100 rounded-lg"><label class="flex items-center"><input type="radio" name="actionType2" class="mr-2"><span>이번 실행 건에 대한 1회성 조치 등록</span></label><label class="flex items-center font-bold"><input type="radio" name="actionType2" class="mr-2" checked><span>근본 원인 해결을 위한 '사후관리' 등록/연결</span></label></div></div>
+
+                            <div class="space-y-5">
+                                 <label class="text-sm font-medium">2. 사후관리 내용 입력</label>
+                                 <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+                                     <i class="fas fa-info-circle mr-1"></i> 이 검증 과제에 대해 진행 중인 사후관리 건이 없습니다. 새로운 사후관리를 등록합니다.
+                                 </div>
+                                 <div class="grid grid-cols-6 items-center"><label class="col-span-1 text-sm font-medium">사후관리 유형</label><select class="col-span-5 p-2 border rounded-md text-sm"><option>선택</option><option>산출 로직 수정</option><option>검증 변경</option><option>유관부서 조치/지원</option></select></div>
+                                 <div class="grid grid-cols-6 items-center"><label class="col-span-1 text-sm font-medium">이슈 요약</label><input type="text" class="col-span-5 p-2 border rounded-md text-sm" placeholder="목록에 표시될 이슈의 핵심 내용을 입력"></div>
+                                 <div class="grid grid-cols-6"><label class="col-span-1 text-sm font-medium mt-2">이슈 상세</label><textarea class="col-span-5 p-2 border rounded-md text-sm" rows="4" placeholder="사후관리가 필요한 이유와 문제 상황을 상세히 기술"></textarea></div>
+                                 <div class="grid grid-cols-6 items-center"><label class="col-span-1 text-sm font-medium">담당자 지정</label><input type="text" class="col-span-5 p-2 border rounded-md text-sm" placeholder="사후관리를 담당할 담당자 검색 또는 입력"></div>
+                                 <div class="flex justify-end space-x-3 pt-4 border-t mt-6"><button class="btn btn-secondary">목록으로</button><button class="btn btn-primary">사후관리 등록</button></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="description-wrapper">
+        <div class="description-content">
+            <h2>화면 설명: 조치 결과 등록 (사후관리 신규 등록)</h2>
+            <p class="mb-4 text-gray-600">근본적인 원인 해결이 필요하여 장기적으로 추적할 이슈를 새로운 '사후관리' 건으로 등록하는 화면입니다.</p>
+            <h3>주요 구성 요소</h3>
+            <table class="description-table">
+                <thead><tr><th>UI 요소</th><th>기능 설명</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>조치 목적 선택</strong></td><td>- '사후관리'가 선택되면, 시스템은 해당 '검증 과제'에 이미 진행 중인 사후관리 건이 있는지 먼저 확인합니다.</td></tr>
+                    <tr><td><strong>안내 메시지</strong></td><td>- 진행 중인 사후관리 건이 없을 경우, 새로운 사후관리를 등록한다는 안내 메시지가 표시되고 아래 신규 등록 폼이 나타납니다.</td></tr>
+                    <tr><td><strong>사후관리 유형</strong></td><td>- 이 사후관리에서 수행할 조치의 종류를 선택하는 드롭다운입니다.<br>- **구성 요소**: `산출 로직 수정`, `검증 변경`, `유관부서 조치/지원` 등이 포함됩니다.</td></tr>
+                    <tr><td><strong>이슈 요약</strong></td><td>- '사후관리 목록' 화면에 표시될 이슈의 핵심 내용을 한 줄로 입력합니다.</td></tr>
+                    <tr><td><strong>이슈 상세</strong></td><td>- 사후관리가 필요한 이유와 문제 상황을 다른 담당자들이 이해할 수 있도록 상세히 기록합니다.</td></tr>
+                    <tr><td><strong>[사후관리 등록] 버튼</strong></td><td>- 클릭 시, 입력된 내용을 바탕으로 새로운 사후관리 건을 생성하고 '사후관리 목록'에 추가합니다.<br>- 동시에, 현재 조치 중인 '검증 실행' 건은 이 신규 사후관리 건에 '연결' 처리되고 상태가 '분석중' 등으로 변경됩니다.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!--조치결과등록 - 사후관리 선택(사후관리 이미 있는경우)-->
+<div class="page-container">
+    <div class="slide-wrapper">
+        <div class="slide">
+            <div class="header-bar flex items-center justify-between px-12"><h1 class="text-white text-2xl font-medium">조치 결과 등록</h1></div>
+            <div class="p-8">
+                <div class="max-w-4xl mx-auto">
+                    <div class="mb-8"><h3 class="text-lg font-medium mb-3 shinhan-blue"><i class="fas fa-info-circle mr-2"></i>조치 대상 검증 정보</h3><div class="panel p-4 grid grid-cols-3 gap-x-6 gap-y-2 text-sm bg-gray-100"><div><strong>검증 실행 ID:</strong> vr_...37</div><div><strong>대상 데이터:</strong> mdb.bmalsa0037</div><div><strong>실패한 규칙:</strong> 12 개</div></div></div>
+                    <div>
+                        <h3 class="text-lg font-medium mb-3 shinhan-blue"><i class="fas fa-edit mr-2"></i>조치 결과 등록</h3>
+                        <div class="panel p-6">
+                            <div class="mb-6"><label class="text-sm font-medium">1. 조치 목적 선택</label><div class="mt-2 flex space-x-6 p-3 bg-gray-100 rounded-lg"><label class="flex items-center"><input type="radio" name="actionType3" class="mr-2"><span>이번 실행 건에 대한 1회성 조치 등록</span></label><label class="flex items-center font-bold"><input type="radio" name="actionType3" class="mr-2" checked><span>근본 원인 해결을 위한 '사후관리' 등록/연결</span></label></div></div>
+
+                            <div class="space-y-4">
+                                <label class="text-sm font-medium">2. 기존 사후관리 연결</label>
+                                <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+                                     <p><i class="fas fa-info-circle mr-1"></i> 이 검증 과제에 대해 이미 아래와 같이 진행 중인 사후관리 건이 있습니다.</p>
+                                     <p class="mt-1">이 실행 건을 해당 사후관리에 이슈로 추가하여 함께 관리하시겠습니까?</p>
+                                </div>
+                                <div class="p-4 border rounded-md">
+                                    <p class="font-semibold">PM-20250711-0001</p>
+                                    <p class="text-sm text-gray-600 mt-1"><strong>이슈 요약:</strong> 해외 국가별 매출 추이 급변동 지속 발생</p>
+                                    <p class="text-sm text-gray-600 mt-1"><strong>담당자:</strong> 김신한 (데이터분석팀)</p>
+                                </div>
+                                <div class="flex justify-end space-x-3 pt-4 border-t mt-6">
+                                    <button class="btn btn-secondary">새로운 사후관리로 등록</button>
+                                    <button class="btn btn-primary"><i class="fas fa-link mr-2"></i>기존 사후관리에 연결</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="description-wrapper">
+        <div class="description-content">
+            <h2>화면 설명: 조치 결과 등록 (기존 사후관리 연결)</h2>
+            <p class="mb-4 text-gray-600">'사후관리'를 선택했으나, 이미 해당 '과제'에 대해 진행 중인 사후관리 건이 있을 때 표시되는 화면입니다.</p>
+            <h3>주요 구성 요소</h3>
+            <table class="description-table">
+                <thead><tr><th>UI 요소</th><th>기능 설명</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>안내 메시지 및<br>기존 사후관리 정보</strong></td><td>- 사용자에게 중복 등록 가능성을 인지시키고, 현재 진행 중인 사후관리 건의 핵심 정보(`ID`, `이슈 요약`, `담당자`)를 보여주어 맥락 파악을 돕습니다.</td></tr>
+                    <tr><td><strong>[기존 사후관리에 연결] 버튼</strong></td><td>- **(주요 기능)** 클릭 시, 현재 조치 중인 '검증 실행' 건을 화면에 표시된 기존 사후관리 건에 연결(Link)하고, 해당 실행의 조치 상태를 '분석중' 등으로 변경합니다.<br>- 이 버튼을 누르는 것이 일반적인 처리 흐름입니다.</td></tr>
+                    <tr><td><strong>[새로운 사후관리로 등록] 버튼</strong></td><td>- **(예외 기능)** 사용자가 기존 건과 별개의 원인이라고 판단하여 새로운 사후관리 건을 생성해야 할 때 사용합니다.<br>- 클릭 시, 현재 화면의 내용이 '사후관리 신규 등록' 폼으로 전환됩니다.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!--사후관리 목록-->
+<div class="page-container">
+    <div class="slide-wrapper">
+        <div class="slide">
+            <div class="header-bar flex items-center justify-between px-12"><h1 class="text-white text-2xl font-medium">사후관리 목록</h1></div>
+            <div class="p-8">
+                <div class="mb-6 p-3 border rounded-lg bg-gray-50 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                         <div class="flex items-center space-x-2 text-sm">
+                            <label class="flex items-center font-medium"><input type="radio" name="pmViewType" class="mr-1" checked><span>내 담당</span></label>
+                            <label class="flex items-center"><input type="radio" name="pmViewType" class="mr-1"><span>전체</span></label>
+                        </div>
+                        <select class="p-2 border rounded-md text-sm"><option>상태: 전체</option><option>상태: 진행중</option><option>상태: 완료</option></select>
+                        <select class="p-2 border rounded-md text-sm"><option>사후관리 유형: 전체</option></select>
+                        <input type="text" placeholder="과제명, 이슈 요약 등 검색" class="p-2 border rounded-md text-sm w-72">
+                    </div>
+                    <div class="flex items-center space-x-2"><button class="btn btn-secondary"><i class="fas fa-undo mr-1"></i>초기화</button><button class="btn btn-primary"><i class="fas fa-search mr-1"></i>조회</button></div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex items-center p-4 bg-white border-l-4 border-yellow-500 rounded-lg shadow-sm">
+                        <div class="w-24 text-center"><span class="px-3 py-1.5 rounded-full font-bold bg-yellow-100 text-yellow-800 text-sm">진행중</span></div>
+                        <div class="flex-grow px-4 border-l border-r">
+                             <p class="font-bold text-gray-800"><span class="text-blue-600">[산출 로직 수정]</span> 카드 상품 마스터 정합성 체크</p>
+                            <p class="text-sm text-gray-600 mt-1"><strong>이슈 요약:</strong> 신규 카드 상품 연회비 누락(12건) 문제 재발</p>
+                            <p class="text-sm text-gray-400 mt-1"><strong>조치 결과:</strong> 결과 등록 대기</p>
+                        </div>
+                        <div class="w-48 text-sm text-center"><p class="font-semibold text-red-500">연결된 실패: 3건</p><p class="mt-1 text-gray-500">담당: 이상품</p></div>
+                        <div class="w-24 text-center"><button class="btn btn-secondary">보기</button></div>
+                    </div>
+                    <div class="flex items-center p-4 bg-white border-l-4 border-green-500 rounded-lg shadow-sm">
+                        <div class="w-24 text-center"><span class="px-3 py-1.5 rounded-full font-bold bg-green-100 text-green-800 text-sm">완료</span></div>
+                        <div class="flex-grow px-4 border-l border-r">
+                            <p class="font-bold text-gray-800"><span class="text-blue-600">[유관부서 조치/지원]</span> 월별 온라인 매출 검증</p>
+                            <p class="text-sm text-gray-600 mt-1"><strong>이슈 요약:</strong> 해외 국가별 매출 추이 급변동 지속 발생</p>
+                            <p class="text-sm text-gray-600 mt-1"><strong>조치 결과:</strong> 유관부서 확인 결과, 정상적인 비즈니스 변동으로 최종 확인</p>
+                        </div>
+                        <div class="w-48 text-sm text-center"><p class="font-semibold text-gray-500">연결된 실패: 2건</p><p class="mt-1 text-gray-500">담당: 김신한</p></div>
+                        <div class="w-24 text-center"><button class="btn btn-secondary">보기</button></div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center mt-4 text-sm">
+                    <div class="flex items-center space-x-2">
+                        <select class="p-2 border rounded-md text-sm"><option selected>10개씩 보기</option><option>20개씩 보기</option></select>
+                        <span class="text-gray-700">총 2개 항목</span>
+                    </div>
+                    <div class="flex items-center space-x-1">
+                        <button class="btn btn-secondary p-2 h-8 w-8" disabled>&laquo;</button>
+                        <button class="btn btn-secondary p-2 h-8 w-8" disabled>&lsaquo;</button>
+                        <span class="px-2">페이지 1 / 1</span>
+                        <button class="btn btn-secondary p-2 h-8 w-8" disabled>&rsaquo;</button>
+                        <button class="btn btn-secondary p-2 h-8 w-8" disabled>&raquo;</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="description-wrapper">
+        <div class="description-content">
+            <h2>화면 설명: 사후관리 목록</h2>
+            <p>1차 조치 후에도 지속적인 관리가 필요한 건들을 카드 형태의 목록으로 조회하고 관리하는 화면입니다.</p>
+            <h3>주요 구성 요소</h3>
+            <table class="description-table">
+                <thead><tr><th>UI 요소</th><th>기능 설명</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>사후관리 카드</strong></td>
+                        <td>
+                            각 사후관리 건을 하나의 카드로 표시합니다.<br>
+                            - **연결된 실패 건수**: 이 사후관리 이슈로 인해 발생한 과거 '검증 실행' 실패 횟수를 보여주어 문제의 재발 빈도와 심각성을 직관적으로 파악할 수 있습니다.
+                        </td>
+                    </tr>
+                    <tr><td><strong>페이징 및 개수 선택</strong></td><td>목록이 많을 경우, 페이지를 나누어 보거나 한 페이지에 표시할 개수를 선택할 수 있습니다.</td></tr>
+                    <tr><td><strong>[보기] 버튼</strong></td><td>클릭 시, 해당 사후관리 건의 상세 내용을 조회하고 최종 결과를 등록할 수 있는 '사후관리 상세' 화면으로 이동합니다.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!--사후관리 상세 (변경)-->
+<div class="page-container">
+    <div class="slide-wrapper">
+        <div class="slide">
+            <div class="header-bar flex items-center justify-between px-12"><h1 class="text-white text-2xl font-medium">'월별 온라인 매출 검증' 사후관리 상세</h1></div>
+            <div class="p-8">
+                <div class="max-w-4xl mx-auto space-y-8">
+
+                    <div>
+                        <h3 class="text-lg font-medium mb-3 shinhan-blue"><i class="fas fa-ticket-alt mr-2"></i>사후관리 기본 정보</h3>
+                        <div class="panel p-6">
+                             <div class="grid grid-cols-3 gap-4 text-sm">
+                                <div><strong>사후관리 ID:</strong> PM-20250711-0001</div>
+                                <div><strong>상태:</strong> <span class="px-2 py-1 rounded-full font-medium bg-yellow-100 text-yellow-800">진행중</span></div>
+                                <div><strong>담당자:</strong> 김신한 (데이터분석팀)</div>
+                                <div class="col-span-3"><strong>이슈 요약:</strong> 해외 국가별 매출 추이 급변동 지속 발생</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg font-medium mb-3 shinhan-blue"><i class="fas fa-history mr-2"></i>연결된 검증 실패 이력 (Runs)</h3>
+                        <div class="overflow-x-auto rounded-lg border">
+                            <table class="data-table w-full text-sm">
+                                <thead class="text-xs"><tr><th>실행 ID</th><th>실행일시</th><th>실패 규칙 수</th><th>총 오류 수</th><th>상세</th></tr></thead>
+                                <tbody>
+                                    <tr><td>vr_..._bmalsa0037</td><td>2025-07-11 14:00:15</td><td>2</td><td>105</td><td><button class="btn btn-secondary text-xs">보기</button></td></tr>
+                                    <tr><td>vr_..._bmalsa0037</td><td>2025-05-09 14:00:50</td><td>1</td><td>1</td><td><button class="btn btn-secondary text-xs">보기</button></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-lg font-medium mb-3 shinhan-blue"><i class="fas fa-edit mr-2"></i>사후관리 최종 결과 등록</h3>
+                        <div class="panel p-6 space-y-5">
+                            <div class="grid grid-cols-6 items-center"><label class="col-span-1 text-sm font-medium">최종 조치 유형</label><select class="col-span-5 p-2 border rounded-md text-sm"><option>유관부서 조치/지원</option></select></div>
+                            <div class="grid grid-cols-6 items-center"><label class="col-span-1 text-sm font-medium">최종 결과 요약</label><input type="text" class="col-span-5 p-2 border rounded-md text-sm" placeholder="목록에 표시될 최종 결과 요약 입력"></div>
+                            <div class="grid grid-cols-6"><label class="col-span-1 text-sm font-medium mt-2">최종 결과 상세</label><textarea class="col-span-5 p-2 border rounded-md text-sm" rows="5" placeholder="최종 조치에 대한 모든 내용을 상세하게 기록"></textarea></div>
+                            <div class="grid grid-cols-6 items-center"><label class="col-span-1 text-sm font-medium">첨부파일</label><div class="col-span-5"><input type="file" class="text-sm"></div></div>
+                            <div class="grid grid-cols-6 items-center"><label class="col-span-1 text-sm font-medium">상태 변경</label><select class="col-span-2 p-2 border rounded-md text-sm"><option>진행중</option><option>완료</option><option>조치 불가</option></select></div>
+                            <div class="flex justify-end space-x-3 pt-4 border-t mt-6"><button class="btn btn-secondary">목록으로</button><button class="btn btn-primary">저장</button></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="description-wrapper">
+        <div class="description-content">
+            <h2>화면 설명: 사후관리 상세</h2>
+            <p>하나의 사후관리 건에 연결된 모든 검증 실패 이력을 확인하고, 최종적인 해결 방안을 등록하여 이슈를 종결하는 화면입니다.</p>
+            <h3>주요 구성 요소</h3>
+            <table class="description-table">
+                <thead><tr><th>UI 요소</th><th>기능 설명</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>사후관리 기본 정보</strong></td><td>현재 조회 중인 사후관리 건의 핵심 정보(상태, 담당자, 이슈 요약 등)를 보여줍니다.</td></tr>
+                    <tr><td><strong>연결된 검증 실패 이력</strong></td><td>이 사후관리 건과 관련하여 과거에 발생했던 모든 '검증 실행(Run)' 실패 목록을 보여줍니다. 이를 통해 문제가 얼마나 자주, 어떤 패턴으로 발생했는지 파악할 수 있습니다.</td></tr>
+                    <tr><td><strong>사후관리 최종 결과 등록</strong></td><td>이 사후관리 건을 최종 종결하기 위한 조치 내용 및 결과를 입력하는 폼입니다. 여기서 '상태'를 '완료'로 변경하고 저장하면, 이 건은 '진행중' 목록에서 사라집니다.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
